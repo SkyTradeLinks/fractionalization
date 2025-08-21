@@ -41,3 +41,10 @@ The protocol must operate in a decentralized, permissionless way, while remainin
 
   * **Passive Accumulation**: all yield is stored in the PDA and automatically transferred to the cNFT reclaimer along with the asset.  
   * **Active Distribution**: income is periodically distributed to SPL token holders based on **snapshot ownership data**.
+
+
+### **4\. Project logistics**
+
+1. SkyTrade Fractionalization is an open source project executed by the community of contributors with the support of [SkyTrade Foundation](https://skytrade.foundation).
+2. You can contact us via [opensource@skytrade.foundation](mailto:opensource@skytrade.foundation).
+3. All the open discussions are happening on GitHub Discussions here: https://github.com/orgs/SkyTradeLinks/discussions/categories/fractionalization-discussions
