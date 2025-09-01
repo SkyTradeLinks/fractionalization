@@ -142,6 +142,3 @@ This is a **Proof of Concept** demonstrating the core concepts. For production u
 - [ ] Audit and security review
 - [ ] Integration with actual transfer hook programs
 
-## License
-
-MIT License - see LICENSE file for details.
