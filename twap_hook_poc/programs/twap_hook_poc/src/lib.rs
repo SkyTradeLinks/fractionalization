@@ -19,6 +19,10 @@ pub mod twap_hook_poc {
         instructions::initialize_ring_buffer(ctx)
     }
 
+    pub fn create_transfer_data(ctx: Context<CreateTransferData>, price: u128, volume: u64) -> Result<()> {
+        instructions::create_transfer_data(ctx, price, volume)
+    }
+
     pub fn process_transfer_hook(ctx: Context<ProcessTransferHook>) -> Result<()> {
         instructions::process_transfer_hook(ctx)
     }
