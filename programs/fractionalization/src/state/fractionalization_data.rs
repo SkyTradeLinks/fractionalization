@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 use crate::{FractionalizeArgs, FRACTIONS_PREFIX};
 
 #[account]
-/// Created by the Token owner, holds the most updated data of the Fractions
-pub struct Fractions {
+/// Created by the Token owner, holds the most updated data of the FractionalizationData
+pub struct FractionalizationData {
     pub bump: [u8; 1],
     pub asset_id: Pubkey,
     pub merkle_tree: Pubkey,
@@ -21,7 +21,7 @@ pub enum FractionStatus {
     Reclaimed,
 }
 
-impl Fractions {
+impl FractionalizationData {
     pub const MAX_SIZE: usize = 8 + //discriminator
         1 + // bump
         32 + // asset_id
@@ -45,7 +45,7 @@ impl Fractions {
         fractions_token_id: Pubkey,
         bump: u8,
     ) {
-        *self = Fractions {
+        *self = FractionalizationData {
             bump: [bump],
             asset_id,
             merkle_tree: args.merkle_tree,

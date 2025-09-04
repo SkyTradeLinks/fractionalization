@@ -30,4 +30,15 @@ pub mod fractionalization {
     pub fn update_config(ctx: Context<UpdateConfigAccounts>, args: UpdateConfigArgs) -> Result<()> {
         handle_update_config(ctx, args)
     }
+
+    pub fn fractionalize(
+        ctx: Context<FractionalizeAccounts>,
+        args: FractionalizeArgs,
+    ) -> Result<()> {
+        handle_fractionalize(ctx, args)
+    }
+
+    pub fn buyback_swap(ctx: Context<BuybackSwapAccounts>, args: BuybackSwapArgs) -> Result<()> {
+        handle_buyback_swap(ctx, args)
+    }
 }

@@ -3,7 +3,7 @@ use anchor_spl::token::Token;
 use mpl_bubblegum::instructions::TransferInstructionArgs;
 
 use crate::{
-    constants::FRACTIONS_PREFIX, AnchorTransferInstructionArgs, Fractions,
+    constants::FRACTIONS_PREFIX, AnchorTransferInstructionArgs, FractionalizationData,
     MplBubblegumProgramAccount,
 };
 
@@ -18,14 +18,14 @@ pub struct FractionalizeAccounts<'info> {
     #[account(
         init,
         payer = payer,
-        space = Fractions::MAX_SIZE,
+        space = FractionalizationData::MAX_SIZE,
         seeds = [
             FRACTIONS_PREFIX.as_bytes(),
             asset_id.key().as_ref(),
         ],
         bump
     )]
-    fractions: Box<Account<'info, Fractions>>,
+    fractions: Box<Account<'info, FractionalizationData>>,
     bubblegum_program: Program<'info, MplBubblegumProgramAccount>,
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
@@ -36,9 +36,8 @@ impl<'info> FractionalizeAccounts<'info> {
     //     CpiContext::new(
     //         self.token_program.to_account_info(),
     //         Mint {
-    //             from: self.offer_ata.to_account_info(),
-    //             to: self.auction_price_escrow.to_account_info(),
-    //             authority: self.offer.to_account_info(),
+    //             to: self.payer_ata.to_account_info(),
+    //             authority: self.fractions.to_account_info(),
     //         },
     //     )
     // }
@@ -81,7 +80,5 @@ pub fn handle_fractionalize(
     _ctx: Context<FractionalizeAccounts>,
     _args: FractionalizeArgs,
 ) -> Result<()> {
-    // Transfer CNFT to auction
-
     Ok(())
 }

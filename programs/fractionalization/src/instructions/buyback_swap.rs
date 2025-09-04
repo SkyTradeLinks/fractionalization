@@ -3,9 +3,11 @@ use anchor_spl::{associated_token::AssociatedToken, token::TokenAccount};
 
 use anchor_spl::token::Token;
 
+use crate::AnchorTransferInstructionArgs;
+
 #[derive(Accounts)]
 // #[instruction(bump: u8, fee_payer_bump: u8, treasury_bump: u8)]
-pub struct CancelOfferAccounts<'info> {
+pub struct BuybackSwapAccounts<'info> {
     #[account(mut)]
     signer: Signer<'info>,
     fractionalization_data: Account<'info, TokenAccount>,
@@ -18,7 +20,15 @@ pub struct CancelOfferAccounts<'info> {
     fees_treasury: AccountInfo<'info>,
 }
 
-impl<'info> CancelOfferAccounts<'info> {
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct BuybackSwapArgs {
+    pub transfer_cnft_args: AnchorTransferInstructionArgs,
+    pub merkle_tree: Pubkey,
+    pub fractions_supply: u64,
+    pub fractionalization_time: i64,
+}
+
+impl<'info> BuybackSwapAccounts<'info> {
     // fn transfer_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
     //     CpiContext::new(
     //         self.token_program.to_account_info(),
@@ -31,6 +41,9 @@ impl<'info> CancelOfferAccounts<'info> {
     // }
 }
 
-pub fn handle_buyback_swap(ctx: Context<CancelOfferAccounts>) -> Result<()> {
+pub fn handle_buyback_swap(
+    _ctx: Context<BuybackSwapAccounts>,
+    _args: BuybackSwapArgs,
+) -> Result<()> {
     Ok(())
 }
