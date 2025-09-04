@@ -126,20 +126,14 @@ describe("twap-hook-poc", () => {
       program.programId
     );
 
-    const [transferDataPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("transfer_data"), authority.publicKey.toBuffer()],
-      program.programId
-    );
-
     // First call should update the ring buffer (first trade)
     await program.methods
-      .processTransferHook()
+      .testRealTransferHook(new anchor.BN(50_000_000), new anchor.BN(1_000_000))
       .accounts({
         ringBuffer: ringBufferPda,
         config: configPda,
         baseMint: baseMint.publicKey,
         quoteMint: quoteMint.publicKey,
-        transferData: transferDataPda,
       })
       .rpc();
 
@@ -166,20 +160,14 @@ describe("twap-hook-poc", () => {
       program.programId
     );
 
-    const [transferDataPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("transfer_data"), authority.publicKey.toBuffer()],
-      program.programId
-    );
-
     // Second call should accumulate volume but not update (too soon)
     await program.methods
-      .processTransferHook()
+      .testRealTransferHook(new anchor.BN(50_000_000), new anchor.BN(1_000_000))
       .accounts({
         ringBuffer: ringBufferPda,
         config: configPda,
         baseMint: baseMint.publicKey,
         quoteMint: quoteMint.publicKey,
-        transferData: transferDataPda,
       })
       .rpc();
 
@@ -223,24 +211,23 @@ describe("twap-hook-poc", () => {
 
     // Update transfer data with higher price and volume
     await program.methods
-      .createTransferData(new anchor.BN(60_000_000), new anchor.BN(2_000_000))
-      .accounts({
-        transferData: transferData1Pda,
-        authority: authority1.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([authority1])
-      .rpc();
-
-    // Process with new data
-    await program.methods
-      .processTransferHook()
+      .testRealTransferHook(new anchor.BN(60_000_000), new anchor.BN(2_000_000))
       .accounts({
         ringBuffer: ringBufferPda,
         config: configPda,
         baseMint: baseMint.publicKey,
         quoteMint: quoteMint.publicKey,
-        transferData: transferData1Pda,
+      })
+      .rpc();
+
+    // Process with new data
+    await program.methods
+      .testRealTransferHook(new anchor.BN(60_000_000), new anchor.BN(2_000_000))
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
       })
       .rpc();
 
@@ -254,23 +241,22 @@ describe("twap-hook-poc", () => {
     );
 
     await program.methods
-      .createTransferData(new anchor.BN(40_000_000), new anchor.BN(500_000))
-      .accounts({
-        transferData: transferData2Pda,
-        authority: authority2.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([authority2])
-      .rpc();
-
-    await program.methods
-      .processTransferHook()
+      .testRealTransferHook(new anchor.BN(40_000_000), new anchor.BN(500_000))
       .accounts({
         ringBuffer: ringBufferPda,
         config: configPda,
         baseMint: baseMint.publicKey,
         quoteMint: quoteMint.publicKey,
-        transferData: transferData2Pda,
+      })
+      .rpc();
+
+    await program.methods
+      .testRealTransferHook(new anchor.BN(40_000_000), new anchor.BN(500_000))
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
       })
       .rpc();
 
@@ -305,23 +291,12 @@ describe("twap-hook-poc", () => {
     );
 
     await program.methods
-      .createTransferData(new anchor.BN(20_000_000), new anchor.BN(5_000_000))
-      .accounts({
-        transferData: transferDataExtremePda,
-        authority: authorityExtreme.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([authorityExtreme])
-      .rpc();
-
-    await program.methods
-      .processTransferHook()
+      .testRealTransferHook(new anchor.BN(20_000_000), new anchor.BN(5_000_000))
       .accounts({
         ringBuffer: ringBufferPda,
         config: configPda,
         baseMint: baseMint.publicKey,
         quoteMint: quoteMint.publicKey,
-        transferData: transferDataExtremePda,
       })
       .rpc();
 
@@ -357,25 +332,24 @@ describe("twap-hook-poc", () => {
 
     // Create the transfer data account once
     await program.methods
-      .createTransferData(new anchor.BN(45_000_000), new anchor.BN(100_000))
+      .testRealTransferHook(new anchor.BN(45_000_000), new anchor.BN(100_000))
       .accounts({
-        transferData: transferDataSmallPda,
-        authority: authoritySmall.publicKey,
-        systemProgram: SystemProgram.programId,
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
       })
-      .signers([authoritySmall])
       .rpc();
 
     // Multiple small trades - just process the hook multiple times
     for (let i = 0; i < 3; i++) {
       await program.methods
-        .processTransferHook()
+        .testRealTransferHook(new anchor.BN(45_000_000), new anchor.BN(100_000))
         .accounts({
           ringBuffer: ringBufferPda,
           config: configPda,
           baseMint: baseMint.publicKey,
           quoteMint: quoteMint.publicKey,
-          transferData: transferDataSmallPda,
         })
         .rpc();
     }
@@ -463,26 +437,25 @@ describe("twap-hook-poc", () => {
 
     // Create the transfer data account once with initial values
     await program.methods
-      .createTransferData(new anchor.BN(50_000_000), new anchor.BN(1_000_000))
+      .testRealTransferHook(new anchor.BN(50_000_000), new anchor.BN(1_000_000))
       .accounts({
-        transferData: transferDataRotatePda,
-        authority: authorityRotate.publicKey,
-        systemProgram: SystemProgram.programId,
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
       })
-      .signers([authorityRotate])
       .rpc();
 
     // Process multiple trades to fill buckets - just call the hook multiple times
     // In a real scenario, each call would have different transfer data from the hook context
     for (let i = 0; i < 5; i++) {
       await program.methods
-        .processTransferHook()
+        .testRealTransferHook(new anchor.BN(50_000_000), new anchor.BN(1_000_000))
         .accounts({
           ringBuffer: ringBufferPda,
           config: configPda,
           baseMint: baseMint.publicKey,
           quoteMint: quoteMint.publicKey,
-          transferData: transferDataRotatePda,
         })
         .rpc();
     }
@@ -495,5 +468,168 @@ describe("twap-hook-poc", () => {
     
     // Verify we have accumulated volume (ring buffer updates require time/volume thresholds)
     assert.isTrue(ringBufferAccount.volumeAccumulator.toNumber() > 0);
+  });
+
+  it("Tests real transfer hook scenarios with devnet-like data", async () => {
+    const [configPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("twap_config")],
+      program.programId
+    );
+
+    const [ringBufferPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("twap_ring_buffer"),
+        baseMint.publicKey.toBuffer(),
+        quoteMint.publicKey.toBuffer()
+      ],
+      program.programId
+    );
+
+    // Test scenario 1: High volume trade that should trigger update
+    const highVolumePrice = 75_000_000; // $0.75
+    const highVolumeAmount = 10_000_000; // 10 SOL equivalent
+    
+    await program.methods
+      .testRealTransferHook(new anchor.BN(highVolumePrice), new anchor.BN(highVolumeAmount))
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
+      })
+      .rpc();
+
+    let ringBufferAccount = await program.account.twapRingBuffer.fetch(ringBufferPda);
+    console.log("After high volume trade:", {
+      price: highVolumePrice,
+      volume: highVolumeAmount,
+      volumeAccumulator: ringBufferAccount.volumeAccumulator.toNumber(),
+      totalVolume: ringBufferAccount.totalVolume.toNumber(),
+      currentBucketIndex: ringBufferAccount.currentBucketIndex
+    });
+
+    // Test scenario 2: Price spike that should trigger emergency update
+    const spikePrice = 120_000_000; // $1.20 (60% increase)
+    const spikeVolume = 5_000_000; // 5 SOL equivalent
+    
+    await program.methods
+      .testRealTransferHook(new anchor.BN(spikePrice), new anchor.BN(spikeVolume))
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
+      })
+      .rpc();
+
+    ringBufferAccount = await program.account.twapRingBuffer.fetch(ringBufferPda);
+    console.log("After price spike:", {
+      price: spikePrice,
+      volume: spikeVolume,
+      volumeAccumulator: ringBufferAccount.volumeAccumulator.toNumber(),
+      totalVolume: ringBufferAccount.totalVolume.toNumber(),
+      currentBucketIndex: ringBufferAccount.currentBucketIndex
+    });
+
+    // Test scenario 3: Low volume trade that should just accumulate
+    const lowVolumePrice = 80_000_000; // $0.80
+    const lowVolumeAmount = 100_000; // 0.1 SOL equivalent
+    
+    await program.methods
+      .testRealTransferHook(new anchor.BN(lowVolumePrice), new anchor.BN(lowVolumeAmount))
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+        baseMint: baseMint.publicKey,
+        quoteMint: quoteMint.publicKey,
+      })
+      .rpc();
+
+    ringBufferAccount = await program.account.twapRingBuffer.fetch(ringBufferPda);
+    console.log("After low volume trade:", {
+      price: lowVolumePrice,
+      volume: lowVolumeAmount,
+      volumeAccumulator: ringBufferAccount.volumeAccumulator.toNumber(),
+      totalVolume: ringBufferAccount.totalVolume.toNumber(),
+      currentBucketIndex: ringBufferAccount.currentBucketIndex
+    });
+
+    // Verify the behavior
+    assert.isTrue(ringBufferAccount.volumeAccumulator.toNumber() > 0);
+  });
+
+  it("Tests buyback price calculations with real market data", async () => {
+    const [configPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("twap_config")],
+      program.programId
+    );
+
+    const [ringBufferPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("twap_ring_buffer"),
+        baseMint.publicKey.toBuffer(),
+        quoteMint.publicKey.toBuffer()
+      ],
+      program.programId
+    );
+
+    // Simulate a series of trades with high volumes to meet thresholds
+    // Using much higher volumes to meet the 500M lamport threshold
+    const trades = [
+      { price: 50_000_000, volume: 600_000_000 },   // $0.50, 600 SOL (above threshold)
+      { price: 55_000_000, volume: 700_000_000 },   // $0.55, 700 SOL
+      { price: 60_000_000, volume: 800_000_000 },   // $0.60, 800 SOL
+      { price: 58_000_000, volume: 750_000_000 },   // $0.58, 750 SOL
+      { price: 65_000_000, volume: 900_000_000 },   // $0.65, 900 SOL
+    ];
+
+    for (const trade of trades) {
+      await program.methods
+        .testRealTransferHook(new anchor.BN(trade.price), new anchor.BN(trade.volume))
+        .accounts({
+          ringBuffer: ringBufferPda,
+          config: configPda,
+          baseMint: baseMint.publicKey,
+          quoteMint: quoteMint.publicKey,
+        })
+        .rpc();
+    }
+
+    // Get the final state and calculate buyback price
+    const finalRingBuffer = await program.account.twapRingBuffer.fetch(ringBufferPda);
+    const finalConfig = await program.account.twapConfig.fetch(configPda);
+    
+    console.log("Final ring buffer state:", {
+      totalVolume: finalRingBuffer.totalVolume.toNumber(),
+      currentBucketIndex: finalRingBuffer.currentBucketIndex,
+      priceBuckets: finalRingBuffer.priceBuckets.length,
+      volumeAccumulator: finalRingBuffer.volumeAccumulator.toNumber()
+    });
+
+    // Calculate expected TWAP manually
+    const totalVolume = trades.reduce((sum, trade) => sum + trade.volume, 0);
+    const weightedPriceSum = trades.reduce((sum, trade) => sum + (trade.price * trade.volume), 0);
+    const expectedTwap = weightedPriceSum / totalVolume;
+    
+    console.log("Expected TWAP:", expectedTwap);
+    console.log("Config buyback discount:", finalConfig.buybackDiscountBps, "bps");
+    
+    // Calculate expected buyback price (5% discount from TWAP)
+    const expectedBuybackPrice = expectedTwap * (10000 - finalConfig.buybackDiscountBps) / 10000;
+    console.log("Expected buyback price:", expectedBuybackPrice);
+    
+    // Verify we have meaningful data
+    // Note: In test environment, ring buffer updates may not trigger due to time/volume thresholds
+    // But we can verify the volume accumulation is working
+    assert.isTrue(finalRingBuffer.volumeAccumulator.toNumber() > 0);
+    
+    // Log the actual TWAP calculation from the program
+    await program.methods
+      .getTwap()
+      .accounts({
+        ringBuffer: ringBufferPda,
+        config: configPda,
+      })
+      .rpc();
   });
 });

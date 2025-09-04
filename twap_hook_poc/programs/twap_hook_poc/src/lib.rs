@@ -34,6 +34,10 @@ pub mod twap_hook_poc {
     pub fn get_twap(ctx: Context<GetTwap>) -> Result<()> {
         instructions::get_twap(ctx)
     }
+
+    pub fn test_real_transfer_hook(ctx: Context<TestRealTransferHook>, price: u128, volume: u64) -> Result<()> {
+        instructions::test_real_transfer_hook(ctx, price, volume)
+    }
 }
 
 #[derive(Accounts)]
