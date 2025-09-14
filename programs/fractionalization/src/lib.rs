@@ -14,7 +14,7 @@ pub use state::*;
 pub use types::*;
 pub use validation::*;
 
-declare_id!("FPuuftc4rKCotZ5VdrZJ994uj2y1efzYNywXbHUHoXVT");
+declare_id!("EB37XXNBT6VZb3mNTg1MZUWTJ34h6GRE96bY8QbKqKkD");
 
 #[program]
 pub mod fractionalization {
@@ -31,8 +31,17 @@ pub mod fractionalization {
         handle_update_config(ctx, args)
     }
 
-    pub fn fractionalize(
-        ctx: Context<FractionalizeAccounts>,
+    // Initialize the FractionalizationData account
+    pub fn init_fractionalization_data<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitFractionalizationDataAccounts<'info>>,
+        args: InitFractionalizationDataArgs,
+    ) -> Result<()> {
+        handle_init_fractionalization_data(ctx, args)
+    }
+
+    pub fn fractionalize<'info>(
+        ctx: Context<'_, '_, '_, 'info, FractionalizeAccounts<'info>>,
+
         args: FractionalizeArgs,
     ) -> Result<()> {
         handle_fractionalize(ctx, args)

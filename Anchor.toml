@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fractionalization = "FPuuftc4rKCotZ5VdrZJ994uj2y1efzYNywXbHUHoXVT"
+fractionalization = "EB37XXNBT6VZb3mNTg1MZUWTJ34h6GRE96bY8QbKqKkD"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

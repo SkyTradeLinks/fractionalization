@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-
 use crate::{FractionalizeArgs, FRACTIONS_PREFIX};
 
 #[account]
@@ -55,4 +54,23 @@ impl FractionalizationData {
             status: FractionStatus::Active,
         }
     }
+
+    /// Inits the Account PDA with minimal args
+    pub fn init_basic(
+        &mut self,
+        args: &crate::instructions::init_fractionalization_data::InitFractionalizationDataArgs,
+        asset_id: Pubkey,
+        bump: u8,
+    ) {
+        *self = FractionalizationData {
+            bump: [bump],
+            asset_id,
+            merkle_tree: args.merkle_tree,
+            fractions_supply: 0,
+            fractionalization_time: args.fractionalization_time,
+            fractions_token_id: Pubkey::default(),
+            status: FractionStatus::Active,
+        }
+    }
+    
 }
