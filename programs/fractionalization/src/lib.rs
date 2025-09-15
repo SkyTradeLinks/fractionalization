@@ -14,7 +14,7 @@ pub use state::*;
 pub use types::*;
 pub use validation::*;
 
-declare_id!("FPuuftc4rKCotZ5VdrZJ994uj2y1efzYNywXbHUHoXVT");
+declare_id!("481bmy6UgmE4EkwUPXsSTqeAi6tNVe3DJZD3hcSJFuWD");
 
 #[program]
 pub mod fractionalization {
@@ -31,11 +31,18 @@ pub mod fractionalization {
         handle_update_config(ctx, args)
     }
 
-    pub fn fractionalize(
-        ctx: Context<FractionalizeAccounts>,
+    pub fn fractionalize<'info>(
+        ctx: Context<'_, '_, '_, 'info, FractionalizeAccounts<'info>>,
         args: FractionalizeArgs,
     ) -> Result<()> {
         handle_fractionalize(ctx, args)
+    }
+
+    pub fn reclaim<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReclaimAccounts<'info>>,
+        args: ReclaimArgs,
+    ) -> Result<()> {
+        handle_reclaim(ctx, args)
     }
 
     pub fn buyback_swap(ctx: Context<BuybackSwapAccounts>, args: BuybackSwapArgs) -> Result<()> {

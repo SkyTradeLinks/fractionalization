@@ -6,6 +6,10 @@ use mpl_bubblegum::types::{
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use mpl_token_metadata::instructions::CreateV1InstructionArgs;
+use mpl_token_metadata::types::{
+    Collection as MetadataCollection, Creator as MetadataCreator, DataV2,
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct AnchorTransferInstructionArgs {
@@ -17,7 +21,7 @@ pub struct AnchorTransferInstructionArgs {
 }
 
 impl AnchorTransferInstructionArgs {
-    pub fn into_transfer_instruction_args(self) -> Result<TransferInstructionArgs> {
+    pub fn into_transfer_instruction_args(&self) -> Result<TransferInstructionArgs> {
         Ok(TransferInstructionArgs {
             root: self.root,
             data_hash: self.data_hash,
@@ -25,6 +29,33 @@ impl AnchorTransferInstructionArgs {
             nonce: self.nonce,
             index: self.index,
         })
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Creator {
+    pub address: Pubkey,
+    pub verified: bool,
+    /// The percentage share.
+    /// The value is a percentage, not basis points.
+    pub share: u8,
+}
+
+impl Creator {
+    pub fn to_mpl_creator(&self) -> mpl_bubblegum::types::Creator {
+        mpl_bubblegum::types::Creator {
+            address: self.address,
+            verified: self.verified,
+            share: self.share,
+        }
+    }
+
+    pub fn to_metadata_creator(&self) -> MetadataCreator {
+        MetadataCreator {
+            address: self.address,
+            share: self.share,
+            verified: self.verified,
+        }
     }
 }
 
@@ -53,26 +84,6 @@ impl PartialAnchorTransferInstructionArgs {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct Creator {
-    pub address: Pubkey,
-    pub verified: bool,
-    /// The percentage share.
-    ///
-    /// The value is a percentage, not basis points.
-    pub share: u8,
-}
-
-impl Creator {
-    pub fn to_mpl_creator(&self) -> mpl_bubblegum::types::Creator {
-        mpl_bubblegum::types::Creator {
-            address: self.address,
-            verified: self.verified,
-            share: self.share,
-        }
-    }
-}
-
 #[derive(AnchorDeserialize, AnchorSerialize)]
 pub struct AnchorUpdateMetadataInstructionArgs {
     pub root: [u8; 32],
@@ -94,7 +105,7 @@ impl AnchorUpdateMetadataInstructionArgs {
     }
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct AnchorMetadataArgs {
     /// The name of the asset
     pub name: String,
@@ -124,15 +135,33 @@ impl AnchorMetadataArgs {
             token_standard: Some(TokenStandard::NonFungible),
             uses: None,
             token_program_version: TokenProgramVersion::Original,
-            collection: self.collection.map(|collection| Collection {
-                key: collection.key,
-                verified: collection.verified,
-            }),
+            collection: self
+                .collection
+                .map(|collection| collection.to_mpl_collection()),
             creators: self
                 .creators
                 .into_iter()
                 .map(|creator| creator.to_mpl_creator())
                 .collect(),
+        }
+    }
+
+    pub fn to_metadata_create_cpi_args(self) -> CreateV1InstructionArgs {
+        CreateV1InstructionArgs {
+            name: self.name,
+            symbol: self.symbol,
+            uri: self.uri,
+            seller_fee_basis_points: self.seller_fee_basis_points,
+            creators: None,
+            primary_sale_happened: self.primary_sale_happened,
+            is_mutable: self.is_mutable,
+            token_standard: mpl_token_metadata::types::TokenStandard::FungibleAsset,
+            collection: None,
+            uses: None,
+            collection_details: None,
+            rule_set: None,
+            decimals: Some(6),
+            print_supply: None,
         }
     }
 }
@@ -172,10 +201,26 @@ impl AnchorUpdateArgs {
     }
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct AnchorCollection {
     pub verified: bool,
     pub key: Pubkey,
+}
+
+impl AnchorCollection {
+    pub fn to_metadata_collection(self) -> MetadataCollection {
+        MetadataCollection {
+            key: self.key,
+            verified: self.verified,
+        }
+    }
+
+    pub fn to_mpl_collection(self) -> Collection {
+        Collection {
+            verified: self.verified,
+            key: self.key,
+        }
+    }
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize)]

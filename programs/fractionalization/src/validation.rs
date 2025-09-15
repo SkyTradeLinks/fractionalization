@@ -10,7 +10,7 @@ pub trait ValidateAccounts {
     ///  (Usually these are going to be the arguments received by the IX)
     type Args;
     /// All validations required for the IX Accounts are done here
-    fn validate(&self, args: &Self::Args) -> Result<()>;
+    fn validate(&self) -> Result<()>;
 }
 
 impl<'a, 'b, 'c, 'info, T> ValidatableContext<'a, 'b, 'c, 'info, T>

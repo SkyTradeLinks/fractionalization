@@ -40,18 +40,18 @@ impl FractionalizationData {
     #[allow(clippy::too_many_arguments)]
     pub fn init(
         &mut self,
-        args: &FractionalizeArgs,
         asset_id: Pubkey,
         fractions_token_id: Pubkey,
         bump: u8,
+        time_stamp: i64,
     ) {
         *self = FractionalizationData {
             bump: [bump],
             asset_id,
-            merkle_tree: args.merkle_tree,
-            fractions_supply: args.fractions_supply,
-            fractionalization_time: args.fractionalization_time,
-            fractions_token_id: fractions_token_id,
+            merkle_tree: self.merkle_tree,
+            fractions_supply: 1_000_000u64.checked_mul(10u64.pow(6)).unwrap(),
+            fractionalization_time: time_stamp,
+            fractions_token_id,
             status: FractionStatus::Active,
         }
     }

@@ -11,4 +11,13 @@ pub enum CustomError {
 
     #[msg("GenericError!")]
     GenericError,
+
+    #[msg("Invalid Proof account len")]
+    InvalidProofAccLen,
+
+    #[msg("Unable to verify metadata")]
+    InvalidMetadata,
+
+    #[msg("Invalid fractions owner by the payer")]
+    InvalidFractionsOwned,
 }

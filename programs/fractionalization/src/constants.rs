@@ -10,6 +10,29 @@ impl anchor_lang::Id for MplBubblegumProgramAccount {
         mpl_bubblegum::programs::MPL_BUBBLEGUM_ID
     }
 }
+#[derive(Clone)]
+pub struct MplMetadataProgramAccount;
+impl anchor_lang::Id for MplMetadataProgramAccount {
+    fn id() -> Pubkey {
+        mpl_token_metadata::ID
+    }
+}
+
+#[derive(Clone)]
+pub struct SplCompressionProgram;
+impl anchor_lang::Id for SplCompressionProgram {
+    fn id() -> Pubkey {
+        mpl_bubblegum::programs::SPL_ACCOUNT_COMPRESSION_ID
+    }
+}
+
+#[derive(Clone)]
+pub struct MplBubblegumNoopProgramAccount;
+impl anchor_lang::Id for MplBubblegumNoopProgramAccount {
+    fn id() -> Pubkey {
+        mpl_bubblegum::programs::SPL_NOOP_ID
+    }
+}
 
 #[derive(Clone)]
 pub struct SplAccountCompressionProgramAccount;
