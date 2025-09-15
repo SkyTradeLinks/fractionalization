@@ -31,6 +31,8 @@ pub struct InitFractionalizationDataAccounts<'info> {
     #[account(
         init_if_needed,
         payer = payer,
+        seeds = [b"fractions_mint", asset_id.key().as_ref()],
+        bump,
         mint::decimals = 6,
         mint::authority = fractions,
         mint::token_program = token_program
@@ -57,7 +59,6 @@ pub struct InitFractionalizationDataAccounts<'info> {
 pub struct InitFractionalizationDataArgs {
     pub merkle_tree: Pubkey,
     pub fractionalization_time: i64,
-    pub asset_name: String,
     pub asset_symbol: String,
 }
 
@@ -71,11 +72,11 @@ pub fn handle_init_fractionalization_data<'info>(
     // Initialize fraction state
     ctx.accounts
         .fractions
-        .init_basic(&args, asset_key, fractions_bump);
+        .init_fraction(&args, asset_key, fractions_bump);
 
     // Build metadata content
     let data = DataV2 {
-        name: format!("Fract {}", args.asset_name),
+        name: format!("Fract {}", args.asset_symbol),
         symbol: format!("f{}", args.asset_symbol),
         uri: "".to_string(),
         seller_fee_basis_points: 0,
@@ -96,7 +97,7 @@ pub fn handle_init_fractionalization_data<'info>(
         sysvar_instructions: sysvar::instructions::ID,
         spl_token_program: Some(ctx.accounts.token_program.key()),
     }.instruction(CreateV1InstructionArgs {
-        name: format!("Fract {}", args.asset_name),
+        name: format!("Fract {}", args.asset_symbol),
         symbol: format!("f{}", args.asset_symbol),
         uri: "".to_string(),
         seller_fee_basis_points: 0,

@@ -7,13 +7,18 @@ import { publicKey } from "@metaplex-foundation/umi";
 import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
+
 const user = [234,198,148,211,9,139,35,189,143,150,225,23,188,210,64,3,242,199,39,234,191,136,108,32,193,119,70,202,128,18,106,214,199,73,220,245,251,10,69,172,222,170,76,205,48,15,160,132,161,134,32,141,6,89,208,173,191,99,158,113,186,180,63,119];
 const userKeypair = Keypair.fromSecretKey(new Uint8Array(user));
+const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
+const TOKEN_2022_ASSOCIATED_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
 describe("fractionalize", () => {
   // Set up provider with userKeypair as wallet
+  const endpoint = "https://api.devnet.solana.com"; // or try a private one if you have it
+  const connection = new anchor.web3.Connection(endpoint, "confirmed");
   const provider = new anchor.AnchorProvider(
-    anchor.getProvider().connection,
+    connection,
     new anchor.Wallet(userKeypair),
     anchor.AnchorProvider.defaultOptions()
   );
@@ -35,12 +40,17 @@ describe("fractionalize", () => {
   // });
 
   it("Fractionalizes a cNFT", async () => {
-    // Declare assetId first
-    const assetId = new PublicKey("CC91cqH3TKi6nkFSHKkXqzhsXyrqRkuwbraqjDeYKaJg");
+    
+  // Use provided token address as assetId
+  const assetId = new PublicKey("LiP1EB8t9izoCybbE21jMLWT39BWW4FQdJgSJwYUQGz");
 
-    // Generate a new keypair for the fractions mint
-    const fractionsMintKeypair = Keypair.generate();
-    const fractionsMint = fractionsMintKeypair.publicKey;
+    // fractions mint as generated pda with asset id seed
+    const [fractionsMint, _] = await PublicKey.findProgramAddressSync(
+      [Buffer.from("fractions_mint"), assetId.toBuffer()],
+      program.programId
+    );
+    // const fractionsMintKeypair = Keypair.generate();
+    // const fractionsMint = fractionsMintKeypair.publicKey;
 
     console.log("Using fractions mint:", fractionsMint.toBase58());
 
@@ -62,7 +72,9 @@ describe("fractionalize", () => {
     const payerFractionsAta = getAssociatedTokenAddressSync(
       fractionsMint,
       payer.publicKey,
-      false // allowOwnerOffCurve
+      false, // allowOwnerOffCurve
+      TOKEN_2022_PROGRAM_ID, // tokenProgramId for Token 2022
+      TOKEN_2022_ASSOCIATED_PROGRAM_ID
     );
 
     // ✅ UMI instance with DAS API plugin
@@ -71,7 +83,7 @@ describe("fractionalize", () => {
     // ✅ DAS expects `publicKey()` type, not string
     const rpcAsset = await umi.rpc.getAsset(publicKey(assetId.toBase58()));
     const rpcAssetProof = await umi.rpc.getAssetProof(publicKey(assetId.toBase58()));
-
+    
 
     // ✅ Extract metadata safely, using camelCase for all fields
     const originalMetadata = {
@@ -81,12 +93,10 @@ describe("fractionalize", () => {
       sellerFeeBasisPoints: rpcAsset.royalty?.basis_points ?? 0,
       primarySaleHappened: (rpcAsset.supply?.print_current_supply ?? 0) > 0,
       isMutable: rpcAsset.mutable ?? false,
-      collection: rpcAsset.grouping?.find((g) => g.group_key === "collection")
-        ? {
-            verified: true, // or false if you know
-            key: new PublicKey(rpcAsset.grouping.find((g) => g.group_key === "collection").group_value),
-          }
-        : null,
+      collection: {
+        verified: true,
+        key: new PublicKey("A7Bn1SU9Qzi7KEFM79JSNBUXvN6LUgUeYp9m2b1L9G4b"),
+      },
       creators:
         rpcAsset.creators?.map((creator) => ({
           address: new PublicKey(creator.address),
@@ -107,6 +117,18 @@ describe("fractionalize", () => {
       bubblegumProgram
     );
 
+    // Derive Bubblegum tree authority PDA
+    const [treeAuthority] = PublicKey.findProgramAddressSync(
+      [merkleTree.toBuffer()],
+      bubblegumProgram
+    );
+
+    console.log("Using merkle tree:", merkleTree.toBase58());
+    console.log("Using tree config:", treeConfig.toBase58());
+    console.log("Using log wrapper:", logWrapper.toBase58());
+    console.log("Using compression wrapper:", compressionProgram.toBase58());
+
+
 
     // ✅ Proof args, convert to number[] for Anchor, camelCase
     const transferCnftArgs = {
@@ -119,13 +141,6 @@ describe("fractionalize", () => {
 
     // ✅ Program args, all camelCase
     const fractionsSupply = new anchor.BN(1000000); // or any dynamic value you want
-    const args = {
-      transferCnftArgs,
-      merkleTree: treeConfig,
-      fractionsSupply,
-      fractionalizationTime: new anchor.BN(Date.now()),
-      originalMetadata,
-    };
 
     // Derive the metadata PDA using findProgramAddressSync
     const [fractionsMetadata, metadataBump] = PublicKey.findProgramAddressSync(
@@ -143,12 +158,10 @@ describe("fractionalize", () => {
     console.log("Fractions Metadata PDA:", fractionsMetadata.toBase58());
 
     // --- SPLIT: First, initialize the FractionalizationData PDA and fractions_mint ---
-    const assetName = originalMetadata.name;
     const assetSymbol = originalMetadata.symbol;
     const initArgs = {
-      merkleTree: treeConfig,
+      merkleTree: merkleTree,
       fractionalizationTime: new anchor.BN(Date.now()),
-      assetName,
       assetSymbol,
     };
     const initAccounts = {
@@ -162,51 +175,25 @@ describe("fractionalize", () => {
       rent: SYSVAR_RENT_PUBKEY,
       tokenProgram: new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
     };
-    try {
-      const initTx = await program.methods
-        .initFractionalizationData(initArgs)
-        .accounts(initAccounts)
-        .signers([fractionsMintKeypair])
-        .rpc();
-      console.log("InitFractionalizationData tx signature", initTx);
-    } catch (e: any) {
-      console.log("InitFractionalizationData error:", e.message);
-      if (e.logs) console.log("Init logs:", e.logs);
-    }
 
-    // --- Explicitly check that fractionsMint is a standard Token-2022 fungible mint (not a pNFT/cNFT) ---
     const connection = anchor.getProvider().connection;
-    const mintAccountInfo = await connection.getAccountInfo(fractionsMint);
-    if (mintAccountInfo) {
-      // Token-2022 mints have a fixed layout for standard mints. pNFT/cNFTs have extra data/extensions.
-      // Standard Token-2022 mint size is 82 bytes (no extensions). If > 82, likely has extensions.
-      if (mintAccountInfo.data.length > 82) {
-        throw new Error("fractionsMint has extensions and may be a pNFT/cNFT. Fractionalization requires a standard Token-2022 fungible mint.");
+  
+    // Check if the metadata account exists before calling initFractionalizationData
+    const metadataAccountInfo = await connection.getAccountInfo(fractionsMetadata);
+    if (!metadataAccountInfo) {
+      try {
+        const initTx = await program.methods
+          .initFractionalizationData(initArgs)
+          .accounts(initAccounts)
+          .rpc();
+        console.log("InitFractionalizationData tx signature", initTx);
+      } catch (e: any) {
+        console.log("InitFractionalizationData error:", e.message);
+        if (e.logs) console.log("Init logs:", e.logs);
       }
-      console.log("fractionsMint is a standard Token-2022 fungible mint (no extensions).");
     } else {
-      console.warn("fractionsMint account not found yet. It will be created by Anchor if needed.");
+      console.log("Fractions metadata account already exists, skipping initFractionalizationData.");
     }
-
-    // ✅ Program accounts (fractionsMint is now only mut, not init)
-    const accounts = {
-      payer: payer.publicKey,
-      assetId: assetId,
-      treeConfig: treeConfig,
-      merkleTree: merkleTree,
-      fractions: fractionsPda,
-      fractionsMint: fractionsMint,
-      payerFractionsAta: payerFractionsAta,
-      fractionsMetadata: fractionsMetadata,
-      logWrapper: logWrapper,
-      compressionProgram: compressionProgram,
-      bubblegumProgram: bubblegumProgram,
-      tokenProgram: new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
-      associatedTokenProgram: new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
-      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      rent: SYSVAR_RENT_PUBKEY,
-    };
 
     const mapProof = (assetProof: { proof: string[] }): AccountMeta[] => {
       if (!assetProof.proof || assetProof.proof.length === 0) {
@@ -218,17 +205,51 @@ describe("fractionalize", () => {
         isWritable: false,
       }));
     };
+    // log rpcAssetProof
+    console.log("RPC Asset Proof:", rpcAssetProof);
 
     const remainingAccounts = mapProof(rpcAssetProof);
+    console.log("Current owner:", rpcAsset.ownership.owner); // 👈 use this
+    console.log("Payer:", payer.publicKey.toBase58()); // 👈 and this to verify
+    // ✅ Program accounts (fractionsMint is now only mut, not init)
+    const fractionalizeAccounts = {
+    payer: payer.publicKey,
+    assetId: assetId,
+    treeConfig: treeConfig,
+    merkleTree: merkleTree,
+    treeAuthority: treeAuthority,
+    fractions: fractionsPda,
+    fractionsMint: fractionsMint,
+    payerFractionsAta: payerFractionsAta,
+    logWrapper: logWrapper,
+    compressionProgram: compressionProgram,
+    bubblegumProgram: bubblegumProgram,
+    tokenProgram: TOKEN_2022_PROGRAM_ID, 
+    associatedTokenProgram: TOKEN_2022_ASSOCIATED_PROGRAM_ID,
+    systemProgram: SystemProgram.programId,
+  };
+    // Insert treeAuthority as the first remaining account (isSigner: false, isWritable: false)
+    const allRemainingAccounts = [
+      { pubkey: treeAuthority, isSigner: false, isWritable: false },
+      ...remainingAccounts
+    ];
+
+    const args = {
+      transferCnftArgs,
+      // merkleTree: merkleTree,
+      fractionsSupply: fractionsSupply,
+      // fractionalizationTime: new anchor.BN(Date.now()),
+      // originalMetadata: originalMetadata,
+
+    };
 
     // --- SPLIT: Then, call fractionalize ---
     try {
-
       const tx = await program.methods
         .fractionalize(args)
-        .accounts(accounts)
+        .accounts(fractionalizeAccounts)
         .signers([userKeypair])
-        .remainingAccounts(remainingAccounts)
+        .remainingAccounts(allRemainingAccounts)
         .rpc();
 
       console.log("Fractionalize transaction signature", tx);

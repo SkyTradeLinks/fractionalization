@@ -14,7 +14,7 @@ pub use state::*;
 pub use types::*;
 pub use validation::*;
 
-declare_id!("EB37XXNBT6VZb3mNTg1MZUWTJ34h6GRE96bY8QbKqKkD");
+declare_id!("DZ5qqnkwDnqCwZ8yXFF6EvT14fBzYiv1g3E4YEUxAvvN");
 
 #[program]
 pub mod fractionalization {

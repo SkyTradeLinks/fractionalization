@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fractionalization = "EB37XXNBT6VZb3mNTg1MZUWTJ34h6GRE96bY8QbKqKkD"
+fractionalization = "DZ5qqnkwDnqCwZ8yXFF6EvT14fBzYiv1g3E4YEUxAvvN"
 
 [registry]
 url = "https://api.apr.dev"
