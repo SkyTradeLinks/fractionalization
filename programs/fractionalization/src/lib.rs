@@ -1,3 +1,6 @@
+#![allow(clippy::result_large_err)]
+#![allow(unexpected_cfgs)]
+
 use anchor_lang::prelude::*;
 
 pub mod constants;
@@ -14,7 +17,7 @@ pub use state::*;
 pub use types::*;
 pub use validation::*;
 
-declare_id!("FPuuftc4rKCotZ5VdrZJ994uj2y1efzYNywXbHUHoXVT");
+declare_id!("CgZgZcGNLyxQcFMHGmomQD5op5hW2ncVxDLt5DnZWn7g");
 
 #[program]
 pub mod fractionalization {
@@ -31,8 +34,8 @@ pub mod fractionalization {
         handle_update_config(ctx, args)
     }
 
-    pub fn fractionalize(
-        ctx: Context<FractionalizeAccounts>,
+    pub fn fractionalize<'info>(
+        ctx: Context<'_, '_, '_, 'info, FractionalizeAccounts<'info>>,
         args: FractionalizeArgs,
     ) -> Result<()> {
         handle_fractionalize(ctx, args)
