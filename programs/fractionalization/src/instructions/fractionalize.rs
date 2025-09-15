@@ -17,9 +17,7 @@ use crate::{
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct FractionalizeArgs {
     pub transfer_cnft_args: AnchorTransferInstructionArgs,
-    // pub merkle_tree: Pubkey,
     pub fractions_supply: u64,
-    // pub original_metadata: AnchorMetadataArgs,
 }
 
 #[derive(Accounts)]
@@ -38,9 +36,6 @@ pub struct FractionalizeAccounts<'info> {
     /// CHECK: Merkle tree account (Bubblegum)
     #[account(mut)]
     pub merkle_tree: AccountInfo<'info>,
-
-    /// CHECK: Tree authority PDA (Bubblegum)
-    pub tree_authority: AccountInfo<'info>,
 
     #[account(
         mut,

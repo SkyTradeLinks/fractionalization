@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use mpl_bubblegum::hash::{hash_creators, hash_metadata};
 use mpl_bubblegum::instructions::{TransferInstructionArgs, UpdateMetadataInstructionArgs};
 use mpl_bubblegum::types::{
-    Collection, Creator as MplCreator, MetadataArgs, TokenProgramVersion, TokenStandard, UpdateArgs,
+    Collection, Creator as MplCreator, MetadataArgs, TokenProgramVersion, TokenStandard, UpdateArgs
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
