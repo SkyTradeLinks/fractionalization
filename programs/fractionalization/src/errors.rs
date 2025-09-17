@@ -11,4 +11,10 @@ pub enum CustomError {
 
     #[msg("GenericError!")]
     GenericError,
+
+    #[msg("Not enough fractions to reclaim asset")] 
+    NotEnoughFractions,
+
+    #[msg("Invalid total supply")] 
+    InvalidSupply,
 }

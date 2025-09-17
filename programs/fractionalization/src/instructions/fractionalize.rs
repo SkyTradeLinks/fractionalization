@@ -37,6 +37,9 @@ pub struct FractionalizeAccounts<'info> {
     #[account(mut)]
     pub merkle_tree: AccountInfo<'info>,
 
+    /// CHECK: that it is the right tree_authority
+    pub tree_authority: UncheckedAccount<'info>,
+
     #[account(
         mut,
         seeds = [

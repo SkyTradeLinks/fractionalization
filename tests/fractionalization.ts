@@ -4,9 +4,10 @@ import { Fractionalization } from "../target/types/fractionalization";
 import { PublicKey, Keypair, SystemProgram, AccountMeta, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { publicKey } from "@metaplex-foundation/umi";
-import { PROGRAM_ADDRESS, PROGRAM_ID } from "@metaplex-foundation/mpl-bubblegum";
+import { MPL_BUBBLEGUM_PROGRAM_ID, fetchTreeConfigFromSeeds, findMintAuthorityPda } from "@metaplex-foundation/mpl-bubblegum";
 import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { min } from "bn.js";
 
 
 const user = [234,198,148,211,9,139,35,189,143,150,225,23,188,210,64,3,242,199,39,234,191,136,108,32,193,119,70,202,128,18,106,214,199,73,220,245,251,10,69,172,222,170,76,205,48,15,160,132,161,134,32,141,6,89,208,173,191,99,158,113,186,180,63,119];
@@ -29,35 +30,31 @@ describe("fractionalize", () => {
   // Use userKeypair as payer
   const payer = provider.wallet;
 
-  it("Is initialized!", async () => {
-    const tx = await program.methods
-      .initializeConfig({})
-      .accounts({
-        authority: payer.publicKey,
-        usdcAddress: anchor.web3.Keypair.generate().publicKey,
-        // systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-    console.log("Your transaction signature", tx);
-  });
+  // it("Is initialized!", async () => {
+  //   const tx = await program.methods
+  //     .initializeConfig({})
+  //     .accounts({
+  //       authority: payer.publicKey,
+  //       usdcAddress: anchor.web3.Keypair.generate().publicKey,
+  //       // systemProgram: SystemProgram.programId,
+  //     })
+  //     .rpc();
+  //   console.log("Your transaction signature", tx);
+  // });
 
   it("Fractionalizes a cNFT", async () => {
-    
-  // Use provided token address as assetId
-  const assetId = new PublicKey("EL3kFKErsbWiDqodphshYmm8iYkWWJ1q3VdSBpkLQKDr");
+    // Use provided token address as assetId
+    const assetId = new PublicKey("7Yr1M4nJ88j3AHCNiBdxNgWv6iNyS6Wnx9iB5XvBe48e");
 
     // fractions mint as generated pda with asset id seed
     const [fractionsMint, _] = await PublicKey.findProgramAddressSync(
       [Buffer.from("fractions_mint"), assetId.toBuffer()],
       program.programId
     );
-    // const fractionsMintKeypair = Keypair.generate();
-    // const fractionsMint = fractionsMintKeypair.publicKey;
 
     console.log("Using fractions mint:", fractionsMint.toBase58());
 
     // Program IDs
-    const bubblegumProgram = PROGRAM_ID;
     const logWrapper = new PublicKey("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
     const compressionProgram = new PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
@@ -107,25 +104,14 @@ describe("fractionalize", () => {
         })) ?? [],
     };
 
-    // console.log("Original Metadata:", originalMetadata); // Remove verbose metadata log
-
-
     // ✅ Merkle tree from DAS compression info
     const merkleTree = new PublicKey(rpcAsset.compression.tree);
 
     // ✅ Derive Bubblegum tree config PDA
     const [treeConfig] = PublicKey.findProgramAddressSync(
       [Buffer.from("tree_config"), merkleTree.toBuffer()],
-      bubblegumProgram
+      new PublicKey(MPL_BUBBLEGUM_PROGRAM_ID)
     );
-
-    // Only log essential addresses
-    console.log("Merkle tree:", merkleTree.toBase58());
-    console.log("Tree config:", treeConfig.toBase58());
-    console.log("Log wrapper:", logWrapper.toBase58());
-    console.log("Compression wrapper:", compressionProgram.toBase58());
-
-
 
     // ✅ Proof args, convert to number[] for Anchor, camelCase
     const transferCnftArgs = {
@@ -202,37 +188,45 @@ describe("fractionalize", () => {
       }));
     };
 
-    const treeAuthority = rpcAsset.authorities?.[0]?.address;
+    // If merkleTree is a @solana/web3.js PublicKey:
+    const umiMerkleTree = publicKey(merkleTree.toBase58());
+    // Fetch the tree config to get the actual tree authority
+    const treeConfigData = await fetchTreeConfigFromSeeds(umi, { 
+      merkleTree: umiMerkleTree
+    });
+
+    const actualTreeAuthority = treeConfigData.treeCreator;
+    console.log("Actual Tree Authority:", actualTreeAuthority);
   
     const remainingAccounts = mapProof(rpcAssetProof);
-    // console.log("Current owner:", rpcAsset.ownership.owner);
-    // console.log("Payer:", payer.publicKey.toBase58());
+
     // ✅ Program accounts (fractionsMint is now only mut, not init)
     const fractionalizeAccounts = {
       payer: payer.publicKey,
       assetId: assetId,
       treeConfig: treeConfig,
       merkleTree: merkleTree,
+      treeAuthority: actualTreeAuthority,
       fractions: fractionsPda,
       fractionsMint: fractionsMint,
       payerFractionsAta: payerFractionsAta,
       logWrapper: logWrapper,
       compressionProgram: compressionProgram,
-      bubblegumProgram: bubblegumProgram,
+      bubblegumProgram: new PublicKey(MPL_BUBBLEGUM_PROGRAM_ID),
       tokenProgram: TOKEN_2022_PROGRAM_ID, 
       associatedTokenProgram: TOKEN_2022_ASSOCIATED_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
     };
 
     // Insert treeAuthority as the first remaining account (isSigner: false, isWritable: false)
+    console.log("Tree Authority PDA:", payer.publicKey.toBase58());
     const allRemainingAccounts = [
-      { pubkey: new PublicKey(treeAuthority), isSigner: false, isWritable: false },
+      { pubkey: payer.publicKey, isSigner: false, isWritable: false },
       ...remainingAccounts
     ];
 
     const args = {
       transferCnftArgs,
-      // merkleTree: merkleTree,
       fractionsSupply: fractionsSupply,
     };
 

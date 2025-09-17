@@ -636,6 +636,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metaplex-foundation/digital-asset-standard-api@npm:^1.0.5":
+  version: 1.0.6
+  resolution: "@metaplex-foundation/digital-asset-standard-api@npm:1.0.6"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.2 <= 1"
+  checksum: 10c0/a5b9fdc166fd9d390f0d356a03abe046ecb41ca51e8141c32e608c70e2e169c9946620ce544e484e54aca338ac17df6ddb1d947368ab14a15b925c00ebbc163d
+  languageName: node
+  linkType: hard
+
 "@metaplex-foundation/digital-asset-standard-api@npm:^2.0.0":
   version: 2.0.0
   resolution: "@metaplex-foundation/digital-asset-standard-api@npm:2.0.0"
@@ -677,6 +686,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metaplex-foundation/mpl-account-compression@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "@metaplex-foundation/mpl-account-compression@npm:0.0.1"
+  dependencies:
+    "@metaplex-foundation/digital-asset-standard-api": "npm:^1.0.5"
+    "@noble/hashes": "npm:^1.3.1"
+    merkletreejs: "npm:^0.3.11"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.9 <= 1"
+  checksum: 10c0/351babbba66f4b0961c633e9705d35bd1c8aa6abd1eb3198088f523036d124bc141be5bea063a96c9f9b8b918d3d19e86016958642a433417ee535724802e14e
+  languageName: node
+  linkType: hard
+
 "@metaplex-foundation/mpl-auction-house@npm:^2.3.0":
   version: 2.5.1
   resolution: "@metaplex-foundation/mpl-auction-house@npm:2.5.1"
@@ -705,6 +727,23 @@ __metadata:
     bn.js: "npm:^5.2.0"
     js-sha3: "npm:^0.8.0"
   checksum: 10c0/b7ebac4fb7c00ebcd293675e7813357e8fc3d51e3280bd4d653b9a27e88b309f11b6d0c53c0e48fec1d97306cf73b745d4a6bbdc6266fa79b99ba126e95fe5bf
+  languageName: node
+  linkType: hard
+
+"@metaplex-foundation/mpl-bubblegum@npm:^5.0.2":
+  version: 5.0.2
+  resolution: "@metaplex-foundation/mpl-bubblegum@npm:5.0.2"
+  dependencies:
+    "@metaplex-foundation/digital-asset-standard-api": "npm:^2.0.0"
+    "@metaplex-foundation/mpl-account-compression": "npm:^0.0.1"
+    "@metaplex-foundation/mpl-token-metadata": "npm:3.2.1"
+    "@metaplex-foundation/mpl-toolbox": "npm:^0.10.0"
+    "@metaplex-foundation/spl-account-compression": "npm:^0.0.1"
+    "@noble/hashes": "npm:^1.3.1"
+    merkletreejs: "npm:^0.3.11"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.9 <= 2.0.0"
+  checksum: 10c0/08ad53fb5f475f4fb07e54c91e1fdde546d8e5c954a607543a3b987bbf4ca6b51b1e52af248ada5ec046df647cc120a22781cd7ff8a52001827e61d31a41e4d5
   languageName: node
   linkType: hard
 
@@ -747,6 +786,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metaplex-foundation/mpl-token-metadata@npm:3.2.1":
+  version: 3.2.1
+  resolution: "@metaplex-foundation/mpl-token-metadata@npm:3.2.1"
+  dependencies:
+    "@metaplex-foundation/mpl-toolbox": "npm:^0.9.4"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.2 < 1"
+  checksum: 10c0/6c64e99b12c43362dfad0f809b1754e0bd84680a51a007cf3439a8c5954c3ffb3d6e7130bdf5bcb0304985a8e60cf66cfd9e897ffb8a4f9953eb522b27fac473
+  languageName: node
+  linkType: hard
+
 "@metaplex-foundation/mpl-token-metadata@npm:^2.11.0, @metaplex-foundation/mpl-token-metadata@npm:^2.5.2":
   version: 2.13.0
   resolution: "@metaplex-foundation/mpl-token-metadata@npm:2.13.0"
@@ -759,6 +809,37 @@ __metadata:
     bn.js: "npm:^5.2.0"
     debug: "npm:^4.3.4"
   checksum: 10c0/698e7b4bc5010e03a8973e1d54ffd204519eec91172da2522405811a4d1721e6e72b790517db1deb4a5db5f1b5c17a0fd69b768a24482f18bbcb3e057cde72ec
+  languageName: node
+  linkType: hard
+
+"@metaplex-foundation/mpl-toolbox@npm:^0.10.0":
+  version: 0.10.0
+  resolution: "@metaplex-foundation/mpl-toolbox@npm:0.10.0"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.2 <= 1"
+  checksum: 10c0/5faf3c31f7eda511bb67c31f41f9627e41d5b1d9b496d561715c8a48a7d035ec084df1685cda5022bfd2d8fd85dfa3bddba14183af1f313166fac25cdce493eb
+  languageName: node
+  linkType: hard
+
+"@metaplex-foundation/mpl-toolbox@npm:^0.9.4":
+  version: 0.9.4
+  resolution: "@metaplex-foundation/mpl-toolbox@npm:0.9.4"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.2 < 1"
+  checksum: 10c0/5036b0d941ada428cc199a3d8472bfc18473dd04cc9226c98971aa133e7d1cd619f4c5b25207f1b4470a1f0c5c108f2ef69404c808a5ee3bf4390fa88c47227d
+  languageName: node
+  linkType: hard
+
+"@metaplex-foundation/spl-account-compression@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "@metaplex-foundation/spl-account-compression@npm:0.0.1"
+  dependencies:
+    "@metaplex-foundation/digital-asset-standard-api": "npm:^1.0.5"
+    "@noble/hashes": "npm:^1.3.1"
+    merkletreejs: "npm:^0.3.11"
+  peerDependencies:
+    "@metaplex-foundation/umi": ">= 0.8.9 <= 1"
+  checksum: 10c0/0fede46a8f302d8f3e4094a3d01c6608b3d55ba31dc232649d6a1fb60e722ae01968e6aa7fb82bf8e35b96ed44522aa73c871146fac92e68c966cf0853575e35
   languageName: node
   linkType: hard
 
@@ -4361,6 +4442,7 @@ __metadata:
     "@coral-xyz/anchor": "npm:^0.30.1"
     "@metaplex-foundation/digital-asset-standard-api": "npm:^2.0.0"
     "@metaplex-foundation/js": "npm:^0.20.1"
+    "@metaplex-foundation/mpl-bubblegum": "npm:^5.0.2"
     "@metaplex-foundation/umi": "npm:^1.4.1"
     "@metaplex-foundation/umi-bundle-defaults": "npm:^1.4.1"
     "@solana/web3.js": "npm:^1.98.4"
