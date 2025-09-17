@@ -2,14 +2,15 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
 import { expect } from "chai";
 import { Fractionalization } from "../target/types/fractionalization";
-import { PublicKey, Keypair, SystemProgram, Connection, AccountMeta } from "@solana/web3.js";
+import {
+  PublicKey, SystemProgram, Connection, AccountMeta, SYSVAR_RENT_PUBKEY
+} from "@solana/web3.js";
 import { generateSigner, keypairIdentity, none } from '@metaplex-foundation/umi'
-import { mintV1, createTree, mplBubblegum, fetchTreeConfigFromSeeds, parseLeafFromMintV2Transaction, mintV2, LeafSchema, parseLeafFromMintV1Transaction, createTreeV2, getAssetWithProof } from '@metaplex-foundation/mpl-bubblegum'
+import { mintV1, createTree, mplBubblegum, LeafSchema, parseLeafFromMintV1Transaction, getAssetWithProof } from '@metaplex-foundation/mpl-bubblegum'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { fetchMerkleTree } from "@metaplex-foundation/mpl-account-compression";
 import fs from 'fs'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
-import bs58 from 'bs58'
+import { getAssociatedTokenAddressSync } from "@solana/spl-token"
 
 const mapProof = (assetProof: { proof: any }): AccountMeta[] => {
   if (!assetProof.proof || assetProof.proof.length === 0) {
@@ -26,23 +27,30 @@ const IDL = require("../target/idl/fractionalization.json");
 
 const FractionalizationAddress = new PublicKey("CgZgZcGNLyxQcFMHGmomQD5op5hW2ncVxDLt5DnZWn7g");
 
-describe("fractionalization", () => {
+describe("fractionalization", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
+  // use solana cli address 
+
+  const keypairFilePath = "/home/abel/.config/solana/id.json";
+  const secretKey = new Uint8Array(
+    JSON.parse(fs.readFileSync(keypairFilePath, "utf-8"))
+  );
+
+  // use umi
+
+  const umi = createUmi('https://devnet.helius-rpc.com/?api-key=0f31c860-68c3-4d89-bc63-a2f8957a0603')
+    .use(mplBubblegum())
+
+  const keypair = umi.eddsa.createKeypairFromSecretKey(secretKey);
+
+  umi.use(keypairIdentity(keypair)).use(mplTokenMetadata());
+
+
+
   it("mint nft", async () => {
-
-    const keypairFilePath = "/home/abel/.config/solana/id.json";
-    const secretKey = new Uint8Array(
-      JSON.parse(fs.readFileSync(keypairFilePath, "utf-8"))
-    );
-
-    const umi = createUmi('http://api.devnet.solana.com')
-      .use(mplBubblegum())
-
-    const keypair = umi.eddsa.createKeypairFromSecretKey(secretKey);
-
-    umi.use(keypairIdentity(keypair)).use(mplTokenMetadata());
+    // create  merkle tree
 
     const merkleTree = generateSigner(umi)
 
@@ -54,11 +62,10 @@ describe("fractionalization", () => {
 
     await builder.sendAndConfirm(umi);
 
+    console.log("Merkle Tree is created.");
+
+    // waiting for transaction to reflect
     await new Promise(resolve => setTimeout(resolve, 15000));
-
-    const merkleTreeAccount = await fetchMerkleTree(umi, merkleTree.publicKey)
-
-    const treeConfig = await fetchTreeConfigFromSeeds(umi, { merkleTree: merkleTree.publicKey });
 
     const { signature } = await mintV1(umi, {
       leafOwner: umi.identity.publicKey,
@@ -75,13 +82,13 @@ describe("fractionalization", () => {
     }).sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
 
 
+    // waiting for transaction to reflect
     await new Promise(resolve => setTimeout(resolve, 15000));
 
     const leaf: LeafSchema = await parseLeafFromMintV1Transaction(umi, signature);
     const assetId = leaf.id;
 
-    console.log("Starting to create fractions pda");
-
+    // provider
     const provider = anchor.getProvider() as AnchorProvider;
     const fractionalizationProgram = new Program<Fractionalization>(IDL, provider);
 
@@ -89,18 +96,23 @@ describe("fractionalization", () => {
 
     const asset_id = new PublicKey(assetId);
 
-    console.log("asset_id:", asset_id);
+    console.log("cNFT mint successful, asset_id:", asset_id);
+
 
     const [fractionsPda, fractionsBump] = PublicKey.findProgramAddressSync(
       [Buffer.from("fractions"), asset_id.toBuffer()],
       FractionalizationAddress
     );
 
-    const { proof, root, node_index } = await umi.rpc.getAssetProof(assetId);
+    const { proof, root } = await umi.rpc.getAssetProof(assetId);
 
     const rpcAssets = await umi.rpc.getAsset(assetId)
 
-    console.log("owner: ", rpcAssets.ownership.owner);
+    const assetWithProofs = await getAssetWithProof(umi, assetId, {
+      truncateCanopy: true,
+    })
+
+    console.log("owner of NFT: ", rpcAssets.ownership.owner);
 
     const proofpathasAccounts = mapProof({ proof });
 
@@ -108,17 +120,72 @@ describe("fractionalization", () => {
 
     const args = {
       transferCnftArgs: {
-        root: Array.from(rootKey.toBytes()),
-        dataHash: Array.from(leaf.dataHash),
-        creatorHash: Array.from(leaf.creatorHash),
-        nonce: new BN(leaf.nonce.toString()),
-        index: 0, // TODO: Get actual leaf index from merkle tree
+        root: Array.from(assetWithProofs.root),
+        dataHash: Array.from(assetWithProofs.dataHash),
+        creatorHash: Array.from(assetWithProofs.creatorHash),
+        nonce: new BN(assetWithProofs.nonce),
+        index: assetWithProofs.index, // TODO: Get actual leaf index from merkle tree
       },
       merkleTree: new PublicKey(merkleTreeAddress),
-      fractionsSupply: new BN(1000),
+      fractionsSupply: new BN(1_000_000 * 10 ** 6),
       fractionalizationTime: new BN(Math.floor(Date.now() / 1000)),
     }
 
+    // Initialize the SPL Token Mint
+
+
+    // Metaplex constants
+    const METADATA_SEED = "metadata";
+    const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+    const MINT_SEED = "fractions_mint";
+
+    const payer = provider.wallet.publicKey;
+
+    const metadata = {
+      merkleTree: new PublicKey(merkleTree.publicKey),
+      assetId: new PublicKey(assetId),
+      treeRoot: new PublicKey(root),
+      name: "Alpha",
+      symbol: "SKY",
+      uri: "https://5vfxc4tr6xoy23qefqbj4qx2adzkzapneebanhcalf7myvn5gzja.arweave.net/7UtxcnH13Y1uBCwCnkL6APKsge0hAgacQFl-zFW9NlI",
+    }
+
+    const [mint, mintBump] = PublicKey.findProgramAddressSync(
+      [Buffer.from(MINT_SEED), asset_id.toBuffer()],
+      fractionalizationProgram.programId
+    );
+
+    const [metadataAddress, metadataBump] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(METADATA_SEED),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        mint.toBuffer(),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    const context = {
+      payer,
+      assetId,
+      metadata: metadataAddress,
+      mint,
+      rent: SYSVAR_RENT_PUBKEY,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+    };
+
+    try {
+      const varkey = await fractionalizationProgram.methods
+        .initMintMetadata(metadata)
+        .accounts(context)
+        .rpc();
+    } catch (err) {
+      console.error("Init mint metadata failed:", err);
+    }
+
+    //create fractionalize pda
 
     try {
       const tx = await fractionalizationProgram.methods
@@ -128,21 +195,19 @@ describe("fractionalization", () => {
             payer: provider.wallet.publicKey,
             assetId: asset_id,
             merkleTree: merkleTreeAddress,
+            ///tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
           }
         )
         .remainingAccounts(proofpathasAccounts)
         .rpc();
 
-        console.log("fractionalize tx:", tx);
+      console.log("fractionalize tx:", tx);
     } catch (err) {
       console.error("Transaction failed:", err);
       if ("logs" in err) {
         console.log("Program logs:", err.logs);
       }
     }
-
-
-
 
     const fractions = await fractionalizationProgram.account.fractionalizationData.fetch(
       fractionsPda
@@ -153,79 +218,69 @@ describe("fractionalization", () => {
 
     const rpcAsset = await umi.rpc.getAsset(assetId)
 
-    console.log("owner: ", rpcAsset.ownership.owner);
+    console.log("Current owner of NFT: ", rpcAsset.ownership.owner);
+
+    const destination = await anchor.utils.token.associatedAddress({
+      mint: mint,
+      owner: payer,
+    });
+
+    const postBalance = (
+      await provider.connection.getTokenAccountBalance(destination)
+    ).value.uiAmount;
+
+    console.log("Token balance of payer: ", postBalance)
 
 
-    // //expect(fractions.assetId.toBase58()).to.equal(assetId.toBase58());
-    // //expect(fractions.merkleTree.toBase58()).to.equal(merkleTree.toBase58());
-    // expect(fractions.fractionsSupply.eq(new BN(1000))).to.be.true;
-    // expect(fractions.fractionalizationTime.toNumber()).to.be.greaterThan(0);
-    // expect(fractions.bump[0]).to.equal(fractionsBump);
+    // Reclaim instructions
+
+    const assetWithProof = await getAssetWithProof(umi, assetId, {
+      truncateCanopy: true,
+    });
+
+    const nextProofpathasAccounts = mapProof({ proof: assetWithProof.proof });
+
+    const transferInstructionArgs = {
+      root: Array.from(assetWithProof.root),
+      dataHash: Array.from(assetWithProof.dataHash),
+      creatorHash: Array.from(assetWithProof.creatorHash),
+      nonce: new BN(assetWithProof.nonce),
+      index: assetWithProof.index, // TODO: Get actual leaf index from merkle tree
+    };
 
 
+    try {
+      const nextTx = await fractionalizationProgram.methods.reclaim({ transferInstructionArgs })
+        .accounts(
+          {
+            payer: provider.wallet.publicKey,
+            assetId: asset_id,
+            merkleTree: merkleTreeAddress,
+            payerTokenAccount: destination,
+          }
+        )
+        .remainingAccounts(nextProofpathasAccounts)
+        .rpc();
 
+      console.log("fractionalize tx:", nextTx);
+    } catch (err) {
+      console.error("Transaction failed:", err);
+      if ("logs" in err) {
+        console.log("Program logs:", err.logs);
+      }
+    }
+
+    const { rpcAsset: aster } = await getAssetWithProof(umi, assetId, {
+      truncateCanopy: true,
+    });
+
+    console.log("NFT Transfered back to ", aster.ownership.owner);
+
+
+    const qpostBalance = (
+      await provider.connection.getTokenAccountBalance(destination)
+    ).value.uiAmount;
+
+    console.log("Token balance of payer now: ", qpostBalance)
   });
-
-  // it("fractionalizes an asset and initializes Fractions PDA", async () => {
-  //   // Get the provider and program
-  //   const provider = anchor.getProvider() as AnchorProvider;
-  //   const fractionalizationProgram = new Program<Fractionalization>(IDL, provider);
-
-  //   const assetKeypair = Keypair.generate();
-  //   const assetId = assetKeypair.publicKey;
-  //   const merkleTree = Keypair.generate().publicKey;
-
-  //   const [fractionsPda, fractionsBump] = PublicKey.findProgramAddressSync(
-  //     [Buffer.from("fractions"), assetId.toBuffer()],
-  //     FractionalizationAddress
-  //   );
-
-  //   const args = {
-  //     transferCnftArgs: {
-  //       root: Array(32).fill(0),
-  //       dataHash: Array(32).fill(0),
-  //       creatorHash: Array(32).fill(0),
-  //       nonce: new BN(0),
-  //       index: 0,
-  //     },
-  //     merkleTree,
-  //     fractionsSupply: new BN(1000),
-  //     fractionalizationTime: new BN(Math.floor(Date.now() / 1000)),
-  //   };
-
-  //   const bubblegumProgram = new PublicKey(
-  //     "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
-  //   );
-
-  //   const tokenProgram = new PublicKey(
-  //     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-  //   );
-
-  //   const tx = await fractionalizationProgram.methods
-  //     .fractionalize(args)
-  //     .accounts({
-  //       payer: provider.wallet.publicKey,
-  //       assetId,
-  //       fractions: fractionsPda,
-  //       bubblegumProgram,
-  //       tokenProgram,
-  //       systemProgram: SystemProgram.programId,
-  //     } as any)
-  //     .rpc();
-
-  //   console.log("fractionalize tx:", tx);
-
-  //   const fractions = await fractionalizationProgram.account.fractionalizationData.fetch(
-  //     fractionsPda
-  //   );
-
-  //   console.log("fractions:", fractions);
-
-
-  //   expect(fractions.assetId.toBase58()).to.equal(assetId.toBase58());
-  //   expect(fractions.merkleTree.toBase58()).to.equal(merkleTree.toBase58());
-  //   expect(fractions.fractionsSupply.eq(new BN(1000))).to.be.true;
-  //   expect(fractions.fractionalizationTime.toNumber()).to.be.greaterThan(0);
-  //   expect(fractions.bump[0]).to.equal(fractionsBump);
-  // });
 });

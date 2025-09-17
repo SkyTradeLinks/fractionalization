@@ -1,8 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::Token,
-    token_interface::{self, Mint, MintTo, TokenAccount, TokenInterface},
+    token::{mint_to, Mint, MintTo, TokenAccount, Token},
 };
 
 use mpl_bubblegum::instructions::{TransferCpi, TransferCpiAccounts, TransferInstructionArgs};
@@ -20,15 +19,14 @@ pub struct FractionalizeAccounts<'info> {
 
     /// CHECK: TODO
     asset_id: AccountInfo<'info>,
+
     #[account(
-        init,
-        payer = payer,
-        space = FractionalizationData::MAX_SIZE,
+        mut,
         seeds = [
             FRACTIONS_PREFIX.as_bytes(),
             asset_id.key().as_ref(),
         ],
-        bump
+        bump,
     )]
     fractions: Box<Account<'info, FractionalizationData>>,
 
@@ -50,15 +48,11 @@ pub struct FractionalizeAccounts<'info> {
     bubblegum_program: Program<'info, MplBubblegumProgramAccount>,
 
     #[account(
-        init,
-        payer = payer,
-        mint::decimals = 6,
-        mint::authority = fractions,
-        mint::freeze_authority = fractions,
-        seeds = [b"mintsdsd"],
-        bump
+        mut,
+        seeds = [b"fractions_mint", asset_id.key().as_ref()],
+        bump,
     )]
-    pub fractions_mint: Box<InterfaceAccount<'info, Mint>>,
+    fractions_mint: Box<Account<'info, Mint>>,
 
     #[account(
         init_if_needed,
@@ -67,9 +61,9 @@ pub struct FractionalizeAccounts<'info> {
         associated_token::authority = payer,
         associated_token::token_program = token_program
     )]
-    pub payer_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    payer_token_account: Box<Account<'info, TokenAccount>>,
 
-    token_program: Interface<'info, TokenInterface>,
+    token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
     associated_token_program: Program<'info, AssociatedToken>,
 }
@@ -157,8 +151,16 @@ pub fn handle_fractionalize<'info>(
 
     // Mint Tokens to account
 
-    token_interface::mint_to(
-        ctx.accounts.mint_fractions(),
+    let bump = ctx.bumps.fractions;
+    let seeds: [&[u8]; 3] = [
+        FRACTIONS_PREFIX.as_bytes(),
+        ctx.accounts.asset_id.key.as_ref(),
+        &[bump],
+    ];
+    let signer_seeds: &[&[&[u8]]] = &[&seeds];
+
+    mint_to(
+        ctx.accounts.mint_fractions().with_signer(signer_seeds),
         args.fractions_supply, // number of fractions
     )?;
 

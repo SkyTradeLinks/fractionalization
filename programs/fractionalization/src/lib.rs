@@ -21,6 +21,7 @@ declare_id!("CgZgZcGNLyxQcFMHGmomQD5op5hW2ncVxDLt5DnZWn7g");
 
 #[program]
 pub mod fractionalization {
+
     use super::*;
 
     pub fn initialize_config(
@@ -34,11 +35,22 @@ pub mod fractionalization {
         handle_update_config(ctx, args)
     }
 
+    pub fn init_mint_metadata(ctx: Context<InitToken>, args: InitTokenParams) -> Result<()> {
+        handle_init_mint_metadata(ctx, args)
+    }
+
     pub fn fractionalize<'info>(
         ctx: Context<'_, '_, '_, 'info, FractionalizeAccounts<'info>>,
         args: FractionalizeArgs,
     ) -> Result<()> {
         handle_fractionalize(ctx, args)
+    }
+
+    pub fn reclaim<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReclaimAccounts<'info>>,
+        args: ReclaimArgs,
+    ) -> Result<()> {
+        handle_reclaim(ctx, args)
     }
 
     pub fn buyback_swap(ctx: Context<BuybackSwapAccounts>, args: BuybackSwapArgs) -> Result<()> {
