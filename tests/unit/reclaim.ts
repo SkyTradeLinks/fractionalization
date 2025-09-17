@@ -16,7 +16,6 @@ import { getAccount } from "@solana/spl-token";
 
 
 describe("fractionalization", () => {
-    // Configure the client to use the local cluster.
     const provider = anchor.AnchorProvider.env();
     anchor.setProvider(provider);
 
@@ -37,7 +36,7 @@ describe("fractionalization", () => {
             .use(dasApi())
             .use(mplBubblegum())
             .use(mplTokenMetadata());
-        const { accounts, signers, args, proofAccounts: proof } = await getFractionalizeConfig(provider.connection, program.programId, umi)
+        const { accounts, signers, args, proofAccounts: proof } = await getFractionalizeConfig(program.programId, umi)
 
         fractionalizationArgs = args;
         fractionalizeAccounts = accounts

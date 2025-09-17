@@ -4,9 +4,8 @@ use crate::{
     // state::Config, 
     AnchorTransferInstructionArgs, 
     FractionalizationData, 
-    SplCompressionProgram, 
-    MplBubblegumNoopProgramAccount, 
-    MplBubblegumProgramAccount
+    MplBubblegumProgramAccount,
+    FractionStatus
 };
 use mpl_bubblegum::{instructions::{TransferCpi, TransferCpiAccounts, TransferInstructionArgs}, utils::get_asset_id};
 use anchor_spl::{associated_token::AssociatedToken, token_interface::{burn, Burn, Token2022, TokenAccount}};
@@ -46,23 +45,24 @@ pub struct ReclaimAccounts<'info> {
             FRACTIONS_PREFIX.as_bytes(),
             fractions.asset_id.as_ref(),
         ],
-        bump
+        bump,
     )]
     fractions: Box<Account<'info, FractionalizationData>>,
 
     /// CHECK: Leaf delegate will be checked inside the CPI
-    leaf_delegate: UncheckedAccount<'info>,
+    leaf_delegate: AccountInfo<'info>,
     /// CHECK: merkle tree will be checked inside the CPI
-    merkle_tree: UncheckedAccount<'info>,
+    merkle_tree: AccountInfo<'info>,
     /// CHECK: tree config will be checked inside the CPI
-    tree_config: UncheckedAccount<'info>,
+    tree_config: AccountInfo<'info>,
 
     bubblegum_program: Program<'info, MplBubblegumProgramAccount>,
-    compression_program: Program<'info, SplCompressionProgram>,
-    log_wrapper: Program<'info, MplBubblegumNoopProgramAccount>,
+    /// CHECK: Compression program checked inside the transfer cpi
+    compression_program: AccountInfo<'info>,
+    /// CHECK: NOOP checked inside the transfer cpi
+    log_wrapper: AccountInfo<'info>,
     system_program: Program<'info, System>,
     associated_token_program: Program<'info, AssociatedToken>,
-    /// CHECK: Token 2022 program address
     token_program: Program<'info, Token2022>,
 }
 
@@ -72,13 +72,16 @@ impl<'info> ReclaimAccounts<'info> {
         require!(proof_account_len > 0, CustomError::InvalidProofAccLen);
         require!(self.payer_fractionalization_ata.amount >= 800_000, CustomError::InvalidFractionsOwned);
 
+        let active = match self.fractions.status {FractionStatus::Active => true, FractionStatus::Reclaimed => false};
+
+        require!(active, CustomError::AlreadyReclaimed);
+
         let expected_asset_id = get_asset_id(&self.merkle_tree.key(), nonce);
 
         require!(
             self.asset_id.key() == expected_asset_id,
             CustomError::InvalidAsset
         );
-
 
         Ok(())
     }
@@ -104,19 +107,17 @@ impl<'info> ReclaimAccounts<'info> {
         Ok(())
     }
 
+    /// Burns fractions token owned by the the payer
     pub fn burn_fractions(&self) -> Result<()> {
         let burn_ix_accounts = Burn {
             authority: self.payer.to_account_info(),
             mint: self.fractionalization_token.to_account_info(),
             from: self.payer_fractionalization_ata.to_account_info()
         };
-
-        let signer_seeds: &[&[&[u8]]] = &[&[
-            FRACTIONS_PREFIX.as_bytes(),
-            self.fractions.asset_id.as_ref(),
-            &self.fractions.bump
-        ]];
         
+        let seeds = self.fractions.get_signer_seeds();     // [&[u8]; N]
+        let signer_seeds: &[&[&[u8]]] = &[&seeds];
+
         let context = CpiContext::new_with_signer(self.token_program.to_account_info(), burn_ix_accounts, signer_seeds);
 
         burn(context, self.payer_fractionalization_ata.amount)?;

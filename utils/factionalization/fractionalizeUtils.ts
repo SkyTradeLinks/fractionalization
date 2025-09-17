@@ -8,8 +8,15 @@ import { BN } from "bn.js";
 import secret from "../../secret.json"
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
-
-export const getFractionalizeConfig = async (connection: Connection, programId: PublicKey, umi: Umi): Promise<{accounts: FractionalizeAccounts<PublicKey, Keypair>, args: FractionalizeArgs, signers: Keypair[], proofAccounts: { isSigner: boolean, isWritable: boolean, pubkey: PublicKey }[]}> => {
+/**
+ * Gets the configs like accounts, proofAccounts, signers and input for the fractionalize instruction
+ *
+ * @param programId                programId of the fractionalization program
+ * @param umi                      umi to get the token information of the specified assetId
+ *
+ * @return Returns the accounts, proofAccounts, signers and input for the fractionalization instruction 
+ */
+export const getFractionalizeConfig = async ( programId: PublicKey, umi: Umi): Promise<{accounts: FractionalizeAccounts<PublicKey, Keypair>, args: FractionalizeArgs, signers: Keypair[], proofAccounts: { isSigner: boolean, isWritable: boolean, pubkey: PublicKey }[]}> => {
     let payer =  Keypair.fromSecretKey(new Uint8Array(bs58.decode(secret.privateKey)));
     
     let keypair = umi.eddsa.createKeypairFromSecretKey(payer.secretKey);
@@ -21,8 +28,6 @@ export const getFractionalizeConfig = async (connection: Connection, programId: 
     const {assetId, treeConfig} =  await createAndMintCNFT(umi);
     console.log(assetId.toString())
     console.log(treeConfig.toString())
-    // const assetId = "6RfYre9e1v9Lnqe71nhGXRqwRecmXonybVWotMVLkrro" // You can either replace it with your assetId, or comment it out and use the above line to create and mint one
-    // const treeConfig = "FC5HxdBs4zTra1R9E2gh1evBRTWpQiX39BLfcnPvHHFG"
 
     const fractionToken = Keypair.generate()
     
@@ -42,8 +47,6 @@ export const getFractionalizeConfig = async (connection: Connection, programId: 
             pubkey: new PublicKey(proof[i])
         })
     }
-
-    // console.log(`leaf delegate:::${leafDelegate.toString()}\n leafOwner:: ${leafOwner.toString()}`)
 
     let {creators, collection, isMutable, name, uri, symbol, sellerFeeBasisPoints, primarySaleHappened } = metadata;
 
@@ -93,8 +96,6 @@ export const getFractionalizeConfig = async (connection: Connection, programId: 
     })
 
     const ixArgs: FractionalizeArgs = {
-        fractionsSupply: new BN(1_000_000), // 1M token supply
-        merkleTree: new PublicKey(merkleTree),
         transferCnftArgs: {
             creatorHash: Array.from(assetProof.creatorHash),
             dataHash: Array.from(assetProof.dataHash),
@@ -125,13 +126,22 @@ export const getFractionalizeConfig = async (connection: Connection, programId: 
 
 }
 
-const createAndMintCNFT = async (umi: any): Promise<{assetId: umiPublicKey,treeConfig: umiPublicKey }> => {
+/**
+ * Creates a new cNFT
+ *
+ * @param umi                      umi to get the token information of the specified assetId
+ * @param maxDepth                 maxDepth of the cNFT(The number of proofAccounts to prove a cNFT on-chain)
+ * @param maxDepth                 the maximum number of changes that can occur to a tree with its Merkle root still being valid
+ * Note: maxDepth and maxBufferSize defaults to 3 and 8 respectively so that the transaction doesn't fail due to transaction limit
+ * @return Returns the accounts, proofAccounts, signers and input for the fractionalization instruction 
+ */
+const createAndMintCNFT = async (umi: Umi, maxDepth: number = 3, maxBufferSize: number = 8): Promise<{assetId: umiPublicKey,treeConfig: umiPublicKey }> => {
     const merkleTreeSigner = generateSigner(umi);
 
     const builder = await createTree(umi, {
         merkleTree: merkleTreeSigner,
-        maxDepth: 3,
-        maxBufferSize: 8,
+        maxDepth,
+        maxBufferSize,
         public: true,
       })
       await builder.sendAndConfirm(umi, {confirm: {commitment: "confirmed"}})

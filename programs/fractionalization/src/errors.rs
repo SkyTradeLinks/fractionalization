@@ -20,4 +20,7 @@ pub enum CustomError {
 
     #[msg("Invalid fractions owner by the payer")]
     InvalidFractionsOwned,
+
+    #[msg("Already reclaimed")]
+    AlreadyReclaimed,
 }

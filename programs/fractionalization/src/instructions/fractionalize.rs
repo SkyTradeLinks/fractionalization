@@ -132,15 +132,10 @@ impl<'info> FractionalizeAccounts<'info> {
     fn mint_fractions(
         &mut self,
         metadata_args: AnchorMetadataArgs,
-        asset_id: Pubkey,
-        fraction_bump: u8,
         fractions_supply: u64,
     ) -> Result<()> {
-        let signer_seeds: &[&[&[u8]]] = &[&[
-            FRACTIONS_PREFIX.as_bytes(),
-            asset_id.as_ref(),
-            &[fraction_bump],
-        ]];
+        let seeds = self.fractions.get_signer_seeds(); // [&[u8]; N]
+        let signer_seeds: &[&[&[u8]]] = &[&seeds];
 
         CreateV1Cpi::new(
             &self.mpl_metadata_program.to_account_info(),
@@ -187,7 +182,6 @@ impl<'info> FractionalizeAccounts<'info> {
             )?;
         }
 
-        // TODO: Mint 1M tokens to the payer of the txn and finish the ix
         let mint_accounts = MintTo {
             authority: self.fractions.to_account_info(),
             mint: self.fraction_token.to_account_info(),
@@ -279,12 +273,8 @@ pub fn handle_fractionalize<'info>(
 
     let fraction_supply = 1_000_000u64.checked_mul(10u64.pow(6)).unwrap();
     // Create the mpl-token-metadata and mint token == args.fractions_supply
-    ctx.accounts.mint_fractions(
-        args.metadata_args,
-        ctx.accounts.asset_id.key(),
-        ctx.bumps.fractions,
-        fraction_supply,
-    )?;
+    ctx.accounts
+        .mint_fractions(args.metadata_args, fraction_supply)?;
 
     Ok(())
 }

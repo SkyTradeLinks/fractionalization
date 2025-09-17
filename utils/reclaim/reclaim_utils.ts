@@ -5,10 +5,21 @@ import {ReclaimAccounts,  ReclaimArgs} from "./types"
 import { getPrograms } from "../helper_funcs";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { getAssetWithProof } from "@metaplex-foundation/mpl-bubblegum";
-import { publicKey } from "@metaplex-foundation/umi";
+import { publicKey, Umi } from "@metaplex-foundation/umi";
 import * as anchor from "@coral-xyz/anchor"
 
-export async function getReclaimConfig( program: Program<Fractionalization>, umi: any,  fractions: PublicKey, leafDelegate: PublicKey, payer: Keypair, treeConfig: PublicKey): Promise<{accounts: ReclaimAccounts<PublicKey, Keypair>, args: ReclaimArgs, signers: Keypair[], proofAccounts: { isSigner: boolean, isWritable: boolean, pubkey: PublicKey }[]}> {
+/**
+ * Gets the configs like accounts, proofAccounts, signers and input for the reclaim instruction
+ *
+ * @param program                  Fractionalization token program
+ * @param umi                      umi to get the token information of the specified assetId
+ * @param fractions                fractions publicKey(Should already be initialized, or else, this function will fail)
+ * @param payer                    payer of the transaction
+ * @param treeConfig               treeConfig for the assetId's merkle tree(Should already be initialized)
+ *
+ * @return Returns the accounts, proofAccounts, signers and input for the reclaim instructioin
+ */
+export async function getReclaimConfig( program: Program<Fractionalization>, umi: Umi,  fractions: PublicKey, leafDelegate: PublicKey, payer: Keypair, treeConfig: PublicKey): Promise<{accounts: ReclaimAccounts<PublicKey, Keypair>, args: ReclaimArgs, signers: Keypair[], proofAccounts: { isSigner: boolean, isWritable: boolean, pubkey: PublicKey }[]}> {
 
     const fractionPda = await program.account.fractionalizationData.fetch(fractions)
 

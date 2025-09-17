@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{FractionalizeArgs, FRACTIONS_PREFIX};
+use crate::FRACTIONS_PREFIX;
 
 #[account]
 /// Created by the Token owner, holds the most updated data of the FractionalizationData
@@ -49,7 +49,7 @@ impl FractionalizationData {
             bump: [bump],
             asset_id,
             merkle_tree: self.merkle_tree,
-            fractions_supply: 1_000_000u64.checked_mul(10u64.pow(6)).unwrap(),
+            fractions_supply: 1_000_000, // 1M tokens for now. This should be ideally featched from global config
             fractionalization_time: time_stamp,
             fractions_token_id,
             status: FractionStatus::Active,

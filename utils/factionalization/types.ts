@@ -24,8 +24,7 @@ export interface FractionalizeAccounts<P,K> {
     leafDelegate: P
 }
 export interface FractionalizeArgs{
-    merkleTree: PublicKey,
-    fractionsSupply: BN,
+
     transferCnftArgs: AnchorTransferInstructionArgs,
     metadataArgs: AnchorMetadataArgs
 }
