@@ -1,16 +1,15 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
-import { expect } from "chai";
+//import { expect } from "chai";
 import { Fractionalization } from "../target/types/fractionalization";
 import {
-  PublicKey, SystemProgram, Connection, AccountMeta, SYSVAR_RENT_PUBKEY
+  PublicKey, SystemProgram, AccountMeta, SYSVAR_RENT_PUBKEY
 } from "@solana/web3.js";
 import { generateSigner, keypairIdentity, none } from '@metaplex-foundation/umi'
 import { mintV1, createTree, mplBubblegum, LeafSchema, parseLeafFromMintV1Transaction, getAssetWithProof } from '@metaplex-foundation/mpl-bubblegum'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import fs from 'fs'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
-import { getAssociatedTokenAddressSync } from "@solana/spl-token"
 
 const mapProof = (assetProof: { proof: any }): AccountMeta[] => {
   if (!assetProof.proof || assetProof.proof.length === 0) {
@@ -40,7 +39,7 @@ describe("fractionalization", async () => {
 
   // use umi
 
-  const umi = createUmi('https://devnet.helius-rpc.com/?api-key=0f31c860-68c3-4d89-bc63-a2f8957a0603')
+  const umi = createUmi('https://api.devnet.solana.com')
     .use(mplBubblegum())
 
   const keypair = umi.eddsa.createKeypairFromSecretKey(secretKey);
