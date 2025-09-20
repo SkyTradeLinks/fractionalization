@@ -11,7 +11,7 @@ use anchor_spl::{
 
 use crate::{
     constants::{NoopProgramAccount, SplAccountCompressionProgramAccount, FRACTIONS_PREFIX},
-    AnchorTransferInstructionArgs, FractionalizationData, MplBubblegumProgramAccount, SharePaidStatus
+    AnchorTransferInstructionArgs, FractionalizationData, MplBubblegumProgramAccount, FractionStatus, SharePaidStatus
 };
 
 #[derive(Accounts)]
@@ -152,9 +152,13 @@ pub fn handle_reclaim<'info>(
     
     let balance = ctx.accounts.payer_token_account.amount;
 
+    // checks whether user had paid for the minority holders. 
     ctx.accounts.check_criteria_fit(balance)?;
 
+    // burn the tokens
     ctx.accounts.burn_fractions(balance)?;
+
+    // Transfer NFT logic
 
     let transfer_args = TransferInstructionArgs {
         root: args.transfer_instruction_args.root,
@@ -172,6 +176,8 @@ pub fn handle_reclaim<'info>(
 
     ctx.accounts
         .transfer_cnft_to_reclaimer(transfer_args, proof_accounts)?;
+
+    //*ctx.accounts.fractions.status = FractionStatus::Reclaimed;
 
     // close the PDA
     ctx.accounts
