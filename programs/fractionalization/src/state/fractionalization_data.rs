@@ -12,6 +12,7 @@ pub struct FractionalizationData {
     pub fractionalization_time: i64,
     pub fractions_token_id: Pubkey,
     pub status: FractionStatus,
+    pub is_share_paid: SharePaidStatus,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize, Copy, Debug)]
@@ -19,6 +20,12 @@ pub struct FractionalizationData {
 pub enum FractionStatus {
     Active,
     Reclaimed,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, Copy, Debug, PartialEq)]
+pub enum SharePaidStatus {
+    Paid,
+    NotPaid,
 }
 
 impl FractionalizationData {
@@ -29,7 +36,8 @@ impl FractionalizationData {
         8 + // fractions_supply
         8 + // fractionalization_time
         32 + // fractions_token_id
-        2; // status
+        2 + // status
+        2; // is_share_paid 
 
     #[inline(always)]
     pub fn get_signer_seeds(&self) -> [&[u8]; 2] {
@@ -53,6 +61,7 @@ impl FractionalizationData {
             fractionalization_time: args.fractionalization_time,
             fractions_token_id: fractions_token_id,
             status: FractionStatus::Active,
+            is_share_paid: SharePaidStatus::NotPaid,
         }
     }
 }

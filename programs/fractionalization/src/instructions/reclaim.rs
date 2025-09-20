@@ -6,12 +6,12 @@ use mpl_bubblegum::instructions::{TransferCpi, TransferCpiAccounts, TransferInst
 
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Burn, Mint, Token, TokenAccount}
+    token::{self, Burn, Mint, Token, TokenAccount},
 };
 
 use crate::{
     constants::{NoopProgramAccount, SplAccountCompressionProgramAccount, FRACTIONS_PREFIX},
-    AnchorTransferInstructionArgs, FractionalizationData, MplBubblegumProgramAccount,
+    AnchorTransferInstructionArgs, FractionalizationData, MplBubblegumProgramAccount, SharePaidStatus
 };
 
 #[derive(Accounts)]
@@ -109,6 +109,24 @@ impl<'info> ReclaimAccounts<'info> {
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         token::burn(cpi_ctx, balance)?;
 
+        Ok(())
+    }
+
+    pub fn check_criteria_fit(&self, balance: u64) -> Result<()> {
+
+        let total_supply = &self.fractions_mint.supply;
+
+        require!(
+            balance * 100 > total_supply * 80,
+            CustomError::NotEnoughForReclaim
+        );
+
+        let fractions_data = &self.fractions;
+
+        require!(
+            fractions_data.is_share_paid == SharePaidStatus::Paid,
+            CustomError::ShareNotPaid
+        );
 
         Ok(())
     }
@@ -131,15 +149,10 @@ pub fn handle_reclaim<'info>(
     ctx: Context<'_, '_, '_, 'info, ReclaimAccounts<'info>>,
     args: ReclaimArgs,
 ) -> Result<()> {
-
-
+    
     let balance = ctx.accounts.payer_token_account.amount;
-    let total_supply = ctx.accounts.fractions_mint.supply;
 
-    require!(
-        balance * 100 > total_supply * 80,
-        CustomError::NotEnoughForReclaim
-    );
+    ctx.accounts.check_criteria_fit(balance)?;
 
     ctx.accounts.burn_fractions(balance)?;
 
@@ -160,8 +173,10 @@ pub fn handle_reclaim<'info>(
     ctx.accounts
         .transfer_cnft_to_reclaimer(transfer_args, proof_accounts)?;
 
-    // close the PDA 
-    ctx.accounts.fractions.close(ctx.accounts.payer.to_account_info())?;
+    // close the PDA
+    ctx.accounts
+        .fractions
+        .close(ctx.accounts.payer.to_account_info())?;
 
     Ok(())
 }
@@ -170,4 +185,7 @@ pub fn handle_reclaim<'info>(
 pub enum CustomError {
     #[msg("User does not hold more than 80% of total supply.")]
     NotEnoughForReclaim,
+
+    #[msg("User has not paid the minority holders' share.")]
+    ShareNotPaid,
 }
