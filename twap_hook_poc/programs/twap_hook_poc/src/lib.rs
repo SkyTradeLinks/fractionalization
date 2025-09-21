@@ -38,6 +38,10 @@ pub mod twap_hook_poc {
     pub fn test_real_transfer_hook(ctx: Context<TestRealTransferHook>, price: u128, volume: u64) -> Result<()> {
         instructions::test_real_transfer_hook(ctx, price, volume)
     }
+
+    pub fn reclaim_fractions(ctx: Context<ReclaimFractions>, amount: u64) -> Result<()> {
+        instructions::reclaim_fractions(ctx, amount)
+    }
 }
 
 #[derive(Accounts)]

@@ -25,6 +25,10 @@ pub struct TwapConfig {
     pub buyback_discount_bps: u16,      // discount from TWAP for buyback (e.g., 500 = 5%)
     pub max_buyback_amount: u64,        // maximum amount that can be bought back
     
+    /// Raydium program configuration
+    pub raydium_program_id: Pubkey,     // Raydium program ID for transaction validation
+    pub raydium_amm_program_id: Pubkey, // Raydium AMM program ID
+    
     /// Last update tracking
     pub last_update_slot: u64,
     pub updates_this_hour: u32,
@@ -119,6 +123,29 @@ impl TwapConfig {
         let discount_multiplier = 10000 - self.buyback_discount_bps as u128;
         (twap_price * discount_multiplier) / 10000
     }
+}
+
+/// Data structure for logging TWAP prices during reclaim operations
+#[account]
+pub struct ReclaimData {
+    /// The token pair being reclaimed
+    pub base_mint: Pubkey,
+    pub quote_mint: Pubkey,
+    
+    /// TWAP price at time of reclaim
+    pub twap_price: u128,
+    
+    /// Buyback price calculated from TWAP
+    pub buyback_price: u128,
+    
+    /// Amount being reclaimed
+    pub reclaim_amount: u64,
+    
+    /// Timestamp of reclaim
+    pub timestamp: u64,
+    
+    /// Bump seed
+    pub bump: u8,
 }
 
 impl TwapRingBuffer {
