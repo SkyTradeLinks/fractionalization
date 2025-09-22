@@ -50,4 +50,11 @@ pub mod fractionalization {
     pub fn buyback_swap(ctx: Context<BuybackSwapAccounts>, args: BuybackSwapArgs) -> Result<()> {
         handle_buyback_swap(ctx, args)
     }
+
+    pub fn reclaim<'info>(
+        ctx: Context<'_, '_, '_, 'info, ReclaimAccounts<'info>>,
+        args: ReclaimArgs,
+    ) -> Result<()> {
+    handle_reclaim(validation::ValidatableContext(ctx), args)
+    }
 }

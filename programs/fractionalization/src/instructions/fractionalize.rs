@@ -4,9 +4,7 @@ use anchor_spl::{
     token_interface,
     token_interface::{ Mint, MintTo, Token2022, TokenAccount},
 };
-use mpl_bubblegum::{
-    instructions::{TransferCpi, TransferCpiAccounts, TransferInstructionArgs},
-};
+use mpl_bubblegum::instructions::{TransferBuilder, TransferInstructionArgs};
 use crate::types::mpl_anchor_wrappers::AnchorMetadataArgs;
 
 use crate::{
@@ -37,8 +35,8 @@ pub struct FractionalizeAccounts<'info> {
     #[account(mut)]
     pub merkle_tree: AccountInfo<'info>,
 
-    /// CHECK: that it is the right tree_authority
-    pub tree_authority: UncheckedAccount<'info>,
+    // / CHECK: that it is the right tree_authority
+    // pub tree_authority: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -96,26 +94,51 @@ impl<'info> FractionalizeAccounts<'info> {
     pub fn transfer_cnft_to_fractions_escrow(
         &self,
         args: TransferInstructionArgs,
-        proof_accounts: Vec<(&AccountInfo<'info>, bool, bool)>,
+        proof_accounts: Vec<AccountInfo<'info>>,
     ) -> Result<()> {
-        let binding = &self.fractions.to_account_info();
-        let payer_account_info = self.payer.to_account_info();
-        let transfer_cpi = TransferCpi::new(
-            &self.bubblegum_program,
-            TransferCpiAccounts {
-                tree_config: &self.tree_config,
-                leaf_owner: (&payer_account_info, true),
-                leaf_delegate: (&payer_account_info, true),
-                new_leaf_owner: &binding,
-                merkle_tree: &self.merkle_tree,
-                log_wrapper: &self.log_wrapper,
-                compression_program: &self.compression_program,
-                system_program: &self.system_program,
-            },
-            args,
-        );
-        transfer_cpi.invoke_with_remaining_accounts(&proof_accounts)?;
+        use anchor_lang::solana_program::{program::invoke, instruction::AccountMeta};
 
+        // Build the transfer instruction using TransferBuilder
+        let mut transfer_builder = TransferBuilder::new();
+        transfer_builder
+            .tree_config(self.tree_config.key())
+            .leaf_owner(self.payer.key(), true)
+            .leaf_delegate(self.payer.key(), true)
+            .new_leaf_owner(self.fractions.key())
+            .merkle_tree(self.merkle_tree.key())
+            .log_wrapper(self.log_wrapper.key())
+            .compression_program(self.compression_program.key())
+            .system_program(self.system_program.key())
+            .root(args.root)
+            .data_hash(args.data_hash)
+            .creator_hash(args.creator_hash)
+            .nonce(args.nonce)
+            .index(args.index);
+
+        // Add proof accounts as readonly AccountMeta
+        for acct in &proof_accounts {
+            transfer_builder.add_remaining_account(AccountMeta::new_readonly(acct.key(), false));
+        }
+
+        let ix = transfer_builder.instruction();
+
+        // Build the account_infos vector in the order Bubblegum expects
+        let mut account_infos = vec![
+            self.tree_config.to_account_info(),
+            self.payer.to_account_info(), // leaf_owner
+            self.payer.to_account_info(), // leaf_delegate
+            self.fractions.to_account_info(), // new_leaf_owner
+            self.merkle_tree.to_account_info(),
+            self.log_wrapper.to_account_info(),
+            self.compression_program.to_account_info(),
+            self.system_program.to_account_info(),
+        ];
+        for acct in &proof_accounts {
+            account_infos.push(acct.clone());
+        }
+
+        // CPI does NOT need program signing here (payer signs)
+        invoke(&ix, &account_infos)?;
         Ok(())
     }
 
@@ -126,37 +149,29 @@ pub fn handle_fractionalize<'info>(
     args: FractionalizeArgs,
 ) -> Result<()> {
     // 1. Transfer cNFT into escrow PDA
-    let proof_accounts: Vec<(&AccountInfo, bool, bool)> =
-        ctx.remaining_accounts
-            .iter()
-            .map(|acct| (acct, false, false))
-            .collect();
+    let proof_accounts: Vec<AccountInfo> = ctx.remaining_accounts.iter().map(|acct| acct.clone()).collect();
+    let bubblegum_transfer_args: TransferInstructionArgs = args.transfer_cnft_args.into_transfer_instruction_args()?;
+    ctx.accounts.transfer_cnft_to_fractions_escrow(bubblegum_transfer_args, proof_accounts)?;
 
-    let bubblegum_transfer_args: TransferInstructionArgs =
-        args.transfer_cnft_args.into_transfer_instruction_args()?;
+    // 2. Mint fractions to payer (fixed supply: 1_000_000) after cNFT transfer
+    let asset_id_key = ctx.accounts.asset_id.key();
+    let bump = ctx.accounts.fractions.bump[0];
+    let seeds: &[&[u8]] = &[
+        FRACTIONS_PREFIX.as_bytes(),
+        asset_id_key.as_ref(),
+        &[bump],
+    ];
+    let signer_seeds: &[&[&[u8]]] = &[&seeds];
 
-    ctx.accounts
-        .transfer_cnft_to_fractions_escrow(bubblegum_transfer_args, proof_accounts)?;
-
-        // 2. Mint fractions to payer (fixed supply: 1_000_000) after cNFT transfer
-        let asset_id_key = ctx.accounts.asset_id.key();
-        let bump = ctx.accounts.fractions.bump[0];
-        let seeds: &[&[u8]] = &[
-            FRACTIONS_PREFIX.as_bytes(),
-            asset_id_key.as_ref(),
-            &[bump],
-        ];
-        let signer_seeds: &[&[&[u8]]] = &[&seeds];
-
-        let mint_to_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            MintTo {
-                mint: ctx.accounts.fractions_mint.to_account_info(),
-                to: ctx.accounts.payer_fractions_ata.to_account_info(),
-                authority: ctx.accounts.fractions.to_account_info(),
-            },
-            signer_seeds,
-        );
+    let mint_to_ctx = CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        MintTo {
+            mint: ctx.accounts.fractions_mint.to_account_info(),
+            to: ctx.accounts.payer_fractions_ata.to_account_info(),
+            authority: ctx.accounts.fractions.to_account_info(),
+        },
+        signer_seeds,
+    );
 
     token_interface::mint_to(mint_to_ctx, args.fractions_supply)?;
 
@@ -170,4 +185,3 @@ pub fn handle_fractionalize<'info>(
 
     Ok(())
 }
-

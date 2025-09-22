@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::Bumps;
 
-pub struct ValidatableContext<'a, 'b, 'c, 'info, T>(Context<'a, 'b, 'c, 'info, T>)
+pub struct ValidatableContext<'a, 'b, 'c, 'info, T>(pub Context<'a, 'b, 'c, 'info, T>)
 where
     T: Bumps + ValidateAccounts;
 
