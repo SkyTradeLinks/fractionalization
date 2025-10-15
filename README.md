@@ -1,93 +1,4 @@
-<<<<<<< HEAD
-# fractionalization-skytrade
 
-This is a Next.js app containing:
-
-- Tailwind and Shadcn UI for styling
-- [Gill](https://gill.site/) Solana SDK
-- Shadcn [Wallet UI](https://registry.wallet-ui.dev) components
-- A basic Greeter Solana program written in Anchor
-- [codama](https://github.com/codama-idl/codama) to generate a JS sdk for the program
-- UI components for interacting with the program
-
-## Getting Started
-
-### Installation
-
-#### Download the template
-
-```shell
-npx create-solana-dapp@latest -t gh:solana-foundation/templates/gill/fractionalization-skytrade
-```
-
-#### Install Dependencies
-
-```shell
-npm install
-```
-
-## Apps
-
-### anchor
-
-This is a Solana program written in Rust using the Anchor framework.
-
-#### Commands
-
-You can use any normal anchor commands. Either move to the `anchor` directory and run the `anchor` command or prefix the
-command with `npm run`, eg: `npm run anchor`.
-
-#### Sync the program id:
-
-Running this command will create a new keypair in the `anchor/target/deploy` directory and save the address to the
-Anchor config file and update the `declare_id!` macro in the `./src/lib.rs` file of the program. This will also update
-the constant in `anchor/src/basic-exports.ts` file.
-
-```shell
-npm run setup
-```
-
-#### Build the program:
-
-```shell
-npm run anchor-build
-```
-
-#### Start the test validator with the program deployed:
-
-```shell
-npm run anchor-localnet
-```
-
-#### Run the tests
-
-```shell
-npm run anchor-test
-```
-
-#### Deploy to Devnet
-
-```shell
-npm run anchor deploy --provider.cluster devnet
-```
-
-### web
-
-This is a React app that uses the Anchor generated client to interact with the Solana program.
-
-#### Commands
-
-Start the app
-
-```shell
-npm run dev
-```
-
-Build the app
-
-```shell
-npm run build
-```
 =======
 # **cNFTs Fractionalization**
 
@@ -139,4 +50,4 @@ The protocol must operate in a decentralized, permissionless way, while remainin
 1. SkyTrade Fractionalization is an open source project executed by the community of contributors with the support of [SkyTrade Foundation](https://skytrade.foundation).
 2. You can contact us via [opensource@skytrade.foundation](mailto:opensource@skytrade.foundation).
 3. All the open discussions are happening on GitHub Discussions here: https://github.com/orgs/SkyTradeLinks/discussions/categories/fractionalization-discussions
->>>>>>> 2a93fb5e4c5c47e2c6ef0dc98320b2f317bbd795
+
