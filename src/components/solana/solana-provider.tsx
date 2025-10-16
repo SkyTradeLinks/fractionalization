@@ -16,3 +16,6 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
     </WalletUi>
   )
 }
+
+// Re-export useSolana as useWallet for convenience
+export { useSolana as useWallet } from './use-solana'
