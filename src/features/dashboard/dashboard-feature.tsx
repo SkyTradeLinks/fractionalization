@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import React from 'react'
 import { AppHero } from '@/components/app-hero'
+import Link from 'next/link'
 
 const primary: {
   label: string
@@ -64,12 +65,68 @@ const secondary: {
   },
 ]
 
+const internal: {
+  label: string
+  href: string
+  description?: string
+  icon: React.ReactNode
+}[] = [
+  {
+    label: 'Explorer',
+    href: '/explorer',
+    description: 'Browse fractionalized NFT vaults',
+    icon: <LucideWallet className="w-8 h-8 text-blue-400" />,
+  },
+  {
+    label: 'Fractionalize',
+    href: '/fractionalize',
+    description: 'Start the NFT fractionalization workflow',
+    icon: <LucideAnchor className="w-8 h-8 text-indigo-400" />,
+  },
+  {
+    label: 'Vault Details',
+    href: '/vault/1',
+    description: 'Open a sample vault details page',
+    icon: <LucideCode className="w-8 h-8 text-lime-400" />,
+  },
+  {
+    label: 'Redeem',
+    href: '/redeem',
+    description: 'Redeem fractional tokens for NFTs',
+    icon: <Droplets className="w-8 h-8 text-green-400" />,
+  },
+  {
+    label: 'Redemption History',
+    href: '/redemption',
+    description: 'View past redemption requests',
+    icon: <BookOpen className="w-8 h-8 text-purple-400" />,
+  },
+]
+
 export default function DashboardFeature() {
   return (
     <div>
       <AppHero title="gm" subtitle="Say hi to your new Solana app." />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {internal.map((link) => (
+            <Link key={link.label} href={link.href} className="block group">
+              <Card className="h-full flex flex-col transition-all duration-200 ease-in-out group-hover:border-primary group-hover:shadow-lg group-hover:-translate-y-1">
+                <CardHeader className="flex-row items-center gap-4">
+                  {link.icon}
+                  <div>
+                    <CardTitle className="group-hover:text-primary transition-colors">{link.label}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-muted-foreground">{link.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           {primary.map((link) => (
             <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="block group">
               <Card className="h-full flex flex-col transition-all duration-200 ease-in-out group-hover:border-primary group-hover:shadow-lg group-hover:-translate-y-1">
@@ -86,6 +143,7 @@ export default function DashboardFeature() {
             </a>
           ))}
         </div>
+
         <div className="mt-8">
           <Card>
             <CardHeader>

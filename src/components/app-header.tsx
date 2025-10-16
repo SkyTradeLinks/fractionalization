@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { ThemeSelect } from '@/components/theme-select'
 import { WalletDropdown } from '@/components/wallet-dropdown'
+import { HeaderQuickLinks } from '@/components/header-quick-links'
 
 const ClusterDropdown = dynamic(() => import('@/components/cluster-dropdown').then((m) => m.ClusterDropdown), {
   ssr: false,
@@ -48,6 +49,7 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
         </Button>
 
         <div className="hidden md:flex items-center gap-4">
+          <HeaderQuickLinks />
           <WalletDropdown />
           <ClusterDropdown />
           <ThemeSelect />
