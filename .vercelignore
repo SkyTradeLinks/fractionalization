@@ -1,0 +1,9 @@
+# Ignore large or backend-only folders not needed for frontend deploy
+anchor/
+target/
+node_modules/
+.vscode/
+*.log
+.DS_Store
+
+# Keep src, package.json and next.config.ts
