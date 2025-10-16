@@ -23,10 +23,19 @@ const fetchUserBalance = async (
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 200));
 
-  // Mock balance data
+  // Mock balance data with different scenarios for testing 80% threshold
+  // Vault 1 (frac1Mint): 90% of 1,000,000 = 900,000 (eligible to reclaim ✅)
+  // Vault 2 (frac2Mint): 50% of 500,000 = 250,000 (not eligible ❌)
+  // Vault 3 (frac3Mint): 85% of 2,000,000 = 1,700,000 (eligible to reclaim ✅)
+  const mockBalances: Record<string, number> = {
+    'frac1Mint123456789': 900000,   // 90% - Button ENABLED
+    'frac2Mint123456789': 250000,   // 50% - Button DISABLED
+    'frac3Mint123456789': 1700000,  // 85% - Button ENABLED
+  };
+
   return {
     fractionalMint,
-    balance: Math.floor(Math.random() * 100000),
+    balance: mockBalances[fractionalMint] || 50000, // Default 50k (5%)
     decimals: 6,
   };
 };

@@ -175,9 +175,19 @@ export function VaultDetails({ vaultId }: VaultDetailsProps) {
                   </div>
                 </div>
                 <div className="pt-4 space-y-2">
-                  <Link href="/redeem">
-                    <Button className="w-full" size="lg">
-                      Redeem Tokens
+                  <Link href="/reclaim">
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      disabled={userSharePercentage < 80}
+                    >
+                      Reclaim NFT
+                      {userSharePercentage < 80 && ' (Need ≥80%)'}
+                    </Button>
+                  </Link>
+                  <Link href="/redemption">
+                    <Button className="w-full" size="lg" variant="outline">
+                      View Activity History
                     </Button>
                   </Link>
                 </div>
