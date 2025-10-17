@@ -14,7 +14,6 @@ export function Navbar() {
   const navLinks = [
     { label: 'Explorer', path: '/' },
     { label: 'Fractionalize', path: '/fractionalize' },
-    { label: 'Reclaim', path: '/reclaim' },
     { label: 'Activity', path: '/redemption' },
   ];
 

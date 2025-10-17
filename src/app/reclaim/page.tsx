@@ -2,9 +2,12 @@
  * Reclaim page - Reclaim original NFT from vault
  */
 
-'use client';
+'use client'
 
-import { ReclaimInterface } from '@/components/fractionalization/reclaim-interface';
+import dynamic from 'next/dynamic'
+import React from 'react'
+
+const ReclaimPageClient = dynamic(() => import('@/components/fractionalization/reclaim-page-client'), { ssr: false })
 
 export default function ReclaimPage() {
   return (
@@ -15,7 +18,7 @@ export default function ReclaimPage() {
           Reclaim the original NFT from the vault (requires holding ≥80% of tokens)
         </p>
       </div>
-      <ReclaimInterface />
+      <ReclaimPageClient />
     </div>
-  );
+  )
 }

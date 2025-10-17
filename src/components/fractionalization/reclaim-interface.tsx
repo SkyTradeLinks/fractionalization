@@ -15,11 +15,11 @@ import { VaultStatus } from '@/types';
 
 const RECLAIM_THRESHOLD = 0.8; // 80% threshold
 
-export function ReclaimInterface() {
+export function ReclaimInterface({ initialVaultId }: { initialVaultId?: string } = {}) {
   const { account } = useWallet();
   const { data: vaults, isLoading: vaultsLoading } = useVaults();
   const { mutate: reclaim, isPending } = useReclaim();
-  const [selectedVaultId, setSelectedVaultId] = useState<string>('');
+  const [selectedVaultId, setSelectedVaultId] = useState<string>(initialVaultId || '');
 
   const selectedVault = vaults?.find((v) => v.id === selectedVaultId);
   const { data: balance } = useUserBalance(

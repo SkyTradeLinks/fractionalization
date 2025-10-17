@@ -15,11 +15,11 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { VaultStatus } from '@/types';
 
-export function RedeemInterface() {
+export function RedeemInterface({ initialVaultId }: { initialVaultId?: string } = {}) {
   const { account } = useWallet();
   const { data: vaults, isLoading: vaultsLoading } = useVaults();
   const { mutate: redeem, isPending } = useRedeem();
-  const [selectedVaultId, setSelectedVaultId] = useState<string>('');
+  const [selectedVaultId, setSelectedVaultId] = useState<string>(initialVaultId || '');
   const [amount, setAmount] = useState<string>('');
 
   const selectedVault = vaults?.find((v) => v.id === selectedVaultId);
@@ -176,7 +176,7 @@ export function RedeemInterface() {
                   className="text-lg"
                 />
                 <p className="text-xs text-muted-foreground">
-                  You must hold 100% of tokens to redeem the original NFT
+                  Redeem your fractional tokens for USDC after the original NFT was reclaimed by the majority holder.
                 </p>
               </div>
 
@@ -186,8 +186,8 @@ export function RedeemInterface() {
                   Important Information
                 </h4>
                 <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• You need to hold the entire supply to reclaim the NFT</li>
-                  <li>• This action cannot be undone</li>
+                  <li>• Redeem is available only after the original NFT was reclaimed</li>
+                  <li>• This action exchanges your fractional tokens for USDC compensation</li>
                   <li>• Transaction fees apply</li>
                 </ul>
               </div>

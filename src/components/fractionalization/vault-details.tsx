@@ -175,7 +175,7 @@ export function VaultDetails({ vaultId }: VaultDetailsProps) {
                   </div>
                 </div>
                 <div className="pt-4 space-y-2">
-                  <Link href="/reclaim">
+                  <Link href={`/reclaim?vault=${vault.id}`}>
                     <Button 
                       className="w-full" 
                       size="lg"
@@ -185,8 +185,18 @@ export function VaultDetails({ vaultId }: VaultDetailsProps) {
                       {userSharePercentage < 80 && ' (Need ≥80%)'}
                     </Button>
                   </Link>
+
+                  {/* Redeem CTA: appears only after original NFT has been reclaimed (Redeemable status) */}
+                  {vault.status === VaultStatus.Redeemable && (
+                    <Link href={`/redeem?vault=${vault.id}`}>
+                      <Button className="w-full" size="lg" variant="outline">
+                        Redeem for USDC
+                      </Button>
+                    </Link>
+                  )}
+
                   <Link href="/redemption">
-                    <Button className="w-full" size="lg" variant="outline">
+                    <Button className="w-full" size="lg" variant="ghost">
                       View Activity History
                     </Button>
                   </Link>
